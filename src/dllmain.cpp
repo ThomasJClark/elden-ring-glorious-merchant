@@ -9,6 +9,7 @@
 
 #include "ermerchant_messages.hpp"
 #include "ermerchant_shops.hpp"
+#include "ermerchant_talkscript.hpp"
 #include "modutils.hpp"
 
 static std::thread mod_thread;
@@ -49,6 +50,9 @@ static void setup_mod()
 
     spdlog::info("Hooking shops...");
     ermerchant::setup_shops();
+
+    spdlog::info("Hooking talkscripts...");
+    ermerchant::setup_talkscript();
 
     spdlog::info("Sleeping to work around a bug in Seamless Co-op...");
     std::this_thread::sleep_for(std::chrono::seconds(5));

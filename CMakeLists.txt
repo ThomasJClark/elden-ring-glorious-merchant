@@ -47,7 +47,6 @@ set_target_properties(steamapi PROPERTIES
 add_library(EldenRingMerchantMod SHARED
   src/dllmain.cpp
   src/from/ezstate.hpp
-  src/from/list.hpp
   src/from/messages.hpp
   src/from/talk_commands.hpp
   src/from/param_lookup.hpp
@@ -55,6 +54,9 @@ add_library(EldenRingMerchantMod SHARED
   src/ermerchant_messages.hpp
   src/ermerchant_shops.cpp
   src/ermerchant_shops.hpp
+  src/ermerchant_talkscript_utils.hpp
+  src/ermerchant_talkscript.cpp
+  src/ermerchant_talkscript.hpp
   src/modutils.cpp
   src/modutils.hpp)
 

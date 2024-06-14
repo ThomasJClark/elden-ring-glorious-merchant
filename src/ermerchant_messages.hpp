@@ -25,6 +25,10 @@ static constexpr int items = 99999031;
 static constexpr int browse_cut_content = 99999032;
 static constexpr int goods = 99999033;
 static constexpr int unlock = 99999100;
+
+static constexpr int leave = 20000009;
+static constexpr int purchase = 20000010;
+static constexpr int sell = 20000011;
 }
 
 void setup_messages();

@@ -1,3 +1,10 @@
+/**
+ * ermerchant_shop.cpp
+ *
+ * New shop params. This iterates through every obtainable item in the game, and creates a shop
+ * param in the appropriate shop that allows buying it for free. The shop lookup functions are
+ * hooked in order to return these modded params.
+ */
 #include "ermerchant_shops.hpp"
 
 #include <array>

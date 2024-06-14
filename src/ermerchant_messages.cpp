@@ -1,3 +1,9 @@
+/**
+ * ermerchant_messages.cpp
+ *
+ * New messages. This determines the message strings uses by the mod, and hooks the message lookup
+ * function to return them.
+ */
 #include "ermerchant_messages.hpp"
 
 #include <chrono>
