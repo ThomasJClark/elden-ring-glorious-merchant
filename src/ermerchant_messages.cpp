@@ -15,24 +15,24 @@
 #include "from/messages.hpp"
 #include "modutils.hpp"
 
-static const std::map<int, const std::wstring> mod_event_text_for_talk = {
-    {ermerchant::event_text_for_talk::weapons, L"Weapons"},
-    {ermerchant::event_text_for_talk::armor, L"Armor"},
-    {ermerchant::event_text_for_talk::spells, L"Spells"},
-    {ermerchant::event_text_for_talk::talismans, L"Talismans"},
-    {ermerchant::event_text_for_talk::ammunition, L"Ammunition"},
-    {ermerchant::event_text_for_talk::ashes_of_war, L"Ashes of War"},
-    {ermerchant::event_text_for_talk::consumables, L"Consumables"},
-    {ermerchant::event_text_for_talk::spirit_summons, L"Spirit Summons"},
-    {ermerchant::event_text_for_talk::materials, L"Materials"},
-    {ermerchant::event_text_for_talk::miscellaneous_items, L"Miscellaneous Items"},
-    {ermerchant::event_text_for_talk::gestures, L"Gestures"},
-    {ermerchant::event_text_for_talk::browse_inventory, L"Browse Inventory"},
-    {ermerchant::event_text_for_talk::items, L"Items"},
-    {ermerchant::event_text_for_talk::browse_cut_content, L"Browse Cut Content"},
-    {ermerchant::event_text_for_talk::goods, L"Goods"},
-    {ermerchant::event_text_for_talk::unlock, L"Unlock"},
-};
+struct ISteamApps;
+extern "C" __declspec(dllimport) ISteamApps *__cdecl SteamAPI_SteamApps_v008();
+extern "C" __declspec(dllimport) const
+    char *__cdecl SteamAPI_ISteamApps_GetCurrentGameLanguage(ISteamApps *);
+
+/**
+ * Return the player's selected language using the Steamworks SDK
+ *
+ * https://partner.steamgames.com/doc/api/ISteamApps#GetCurrentGameLanguage
+ */
+static std::string get_steam_language()
+{
+    auto steam_api = SteamAPI_SteamApps_v008();
+    auto steam_language = SteamAPI_ISteamApps_GetCurrentGameLanguage(steam_api);
+    return steam_language != nullptr ? steam_language : "";
+}
+
+static const std::map<int, const std::wstring> *mod_event_text_for_talk;
 
 static from::CS::MsgRepositoryImp *msg_repository = nullptr;
 
@@ -51,8 +51,8 @@ static const wchar_t *msg_repository_lookup_entry_detour(from::CS::MsgRepository
 {
     if (bnd_id == from::msgbnd::event_text_for_talk)
     {
-        auto result = mod_event_text_for_talk.find(msg_id);
-        if (result != mod_event_text_for_talk.end())
+        auto result = mod_event_text_for_talk->find(msg_id);
+        if (result != mod_event_text_for_talk->end())
         {
             return result->second.c_str();
         }
@@ -63,6 +63,20 @@ static const wchar_t *msg_repository_lookup_entry_detour(from::CS::MsgRepository
 
 void ermerchant::setup_messages()
 {
+    // Pick the messages to use based on the player's selected language for the game in Steam
+    auto language = get_steam_language();
+    auto localized_messages = event_text_for_talk_by_lang.find(language);
+    if (localized_messages != event_text_for_talk_by_lang.end())
+    {
+        spdlog::info("Detected language \"{}\"", language);
+        mod_event_text_for_talk = &localized_messages->second;
+    }
+    else
+    {
+        spdlog::warn("Unknown language \"{}\", defaulting to English", language);
+        mod_event_text_for_talk = &event_text_for_talk_by_lang.at("engus");
+    }
+
     auto msg_repository_address = modutils::scan<from::CS::MsgRepositoryImp *>({
         .aob = "48 8B 3D ?? ?? ?? ?? 44 0F B6 30 48 85 FF 75",
         .relative_offsets = {{3, 7}},

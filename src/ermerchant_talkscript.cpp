@@ -67,7 +67,7 @@ static std::array<from::EzState::transition *, 100> patched_transition_array;
  * Check if the given state group is the main menu for a merchant, and patch it to contain the
  * modded menu options
  */
-static void patch_states(from::EzState::state_group *state_group)
+static bool patch_states(from::EzState::state_group *state_group)
 {
     from::EzState::event *add_menu1_event = nullptr;
     from::EzState::event *add_menu2_event = nullptr;
@@ -95,7 +95,7 @@ static void patch_states(from::EzState::state_group *state_group)
                 {
                     spdlog::debug("Not patching state group x{}, already patched",
                                   0x7fffffff - state_group->id);
-                    return;
+                    return true;
                 }
             }
         }
@@ -109,12 +109,10 @@ static void patch_states(from::EzState::state_group *state_group)
 
     if (!add_menu1_event || !add_menu2_event || !menu_transition_state)
     {
-        return;
+        return false;
     }
 
     spdlog::info("Patching state group x{}", 0x7fffffff - state_group->id);
-
-    main_menu_return_transition.target_state = state_group->initial_state;
 
     // Change the "Purchase"/"Sell" menu options to "Browse Inventory"/"Browse Cut Content"
     add_menu1_event->args[0] = browse_inventory_index_value;
@@ -132,7 +130,9 @@ static void patch_states(from::EzState::state_group *state_group)
     patched_transition_array[start_index + 1] = &browse_cut_content_transition;
     patched_transition_array[start_index + 2] = transitions.back();
 
-    menu_transition_state->transitions = {patched_transition_array.data(), transitions.size() + 1};
+    menu_transition_state->transitions = {patched_transition_array.data(), transitions.size() + 2};
+
+    return true;
 }
 
 static void (*ezstate_enter_state)(from::EzState::state *,
@@ -149,7 +149,10 @@ static void ezstate_enter_state_detour(from::EzState::state *state,
 {
     if (state == machine->state_group->initial_state)
     {
-        patch_states(machine->state_group);
+        if (patch_states(machine->state_group))
+        {
+            main_menu_return_transition.target_state = state;
+        }
     }
 
     ezstate_enter_state(state, machine, unk);

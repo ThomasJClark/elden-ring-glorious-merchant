@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <string>
 
 #include "from/messages.hpp"
@@ -33,5 +34,7 @@ static constexpr int sell = 20000011;
 
 void setup_messages();
 const std::wstring_view get_message(from::msgbnd, int);
+
+extern const std::map<std::string, std::map<int, const std::wstring>> event_text_for_talk_by_lang;
 
 }

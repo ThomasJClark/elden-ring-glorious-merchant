@@ -45,20 +45,21 @@ set_target_properties(steamapi PROPERTIES
         IMPORTED_LOCATION_DEBUG steam_api64.lib)
 
 add_library(EldenRingMerchantMod SHARED
-  src/dllmain.cpp
-  src/from/ezstate.hpp
-  src/from/messages.hpp
   src/from/talk_commands.hpp
   src/from/param_lookup.hpp
-  src/ermerchant_messages.cpp
-  src/ermerchant_messages.hpp
-  src/ermerchant_shops.cpp
-  src/ermerchant_shops.hpp
-  src/ermerchant_talkscript_utils.hpp
-  src/ermerchant_talkscript.cpp
-  src/ermerchant_talkscript.hpp
+  src/from/messages.hpp
+  src/from/ezstate.hpp
+  src/modutils.hpp
   src/modutils.cpp
-  src/modutils.hpp)
+  src/ermerchant_talkscript.hpp
+  src/ermerchant_talkscript.cpp
+  src/ermerchant_talkscript_utils.hpp
+  src/ermerchant_shops.hpp
+  src/ermerchant_shops.cpp
+  src/ermerchant_messages.hpp
+  src/ermerchant_messages.cpp
+  src/ermerchant_messages_by_lang.cpp
+  src/dllmain.cpp)
 
 set_target_properties(EldenRingMerchantMod PROPERTIES OUTPUT_NAME "ermerchant")
 
