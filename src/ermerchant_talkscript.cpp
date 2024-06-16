@@ -18,48 +18,7 @@
 #include "from/talk_commands.hpp"
 #include "modutils.hpp"
 
-/**
- * Returns true if the given state is a GetTalkListEntryResult() switch that, in at least one case,
- * transitions to the sell shop. We use this to identify where to patch the transition into the
- * modded talk menus.
- */
-bool is_menu_transition_state(from::EzState::state &state)
-{
-    for (auto &transition : state.transitions)
-    {
-        auto target_state = transition->target_state;
-        if (!target_state)
-        {
-            continue;
-        }
-
-        if (target_state->entry_events.size() > 0 &&
-            target_state->entry_events[0].command == from::talk_command::open_sell_shop)
-        {
-            return true;
-        }
-
-        auto transitions = target_state->transitions;
-        if (transitions.size() == 0)
-        {
-            continue;
-        }
-
-        auto next_target_state = transitions[0]->target_state;
-        if (!next_target_state)
-        {
-            continue;
-        }
-
-        if (next_target_state->entry_events.size() > 0 &&
-            next_target_state->entry_events[0].command == from::talk_command::open_sell_shop)
-        {
-            return true;
-        }
-    }
-
-    return false;
-}
+static constexpr unsigned char get_talk_list_entry_result_function = 23;
 
 static std::array<from::EzState::transition *, 100> patched_transition_array;
 
@@ -100,10 +59,15 @@ static bool patch_states(from::EzState::state_group *state_group)
             }
         }
 
-        // Look for the state where we transition to the chosen menu item
-        if (is_menu_transition_state(state))
+        // Look for the state where we check the chosen menu item and transition to a new state.
+        for (auto &transition : state.transitions)
         {
-            menu_transition_state = &state;
+            if (transition->evaluator.size() > 1 &&
+                transition->evaluator[0] - 64 == get_talk_list_entry_result_function)
+            {
+                menu_transition_state = &state;
+                break;
+            }
         }
     }
 
@@ -130,7 +94,7 @@ static bool patch_states(from::EzState::state_group *state_group)
     patched_transition_array[start_index + 1] = &browse_cut_content_transition;
     patched_transition_array[start_index + 2] = transitions.back();
 
-    menu_transition_state->transitions = {patched_transition_array.data(), transitions.size() + 2};
+    transitions = {patched_transition_array.data(), transitions.size() + 2};
 
     return true;
 }
