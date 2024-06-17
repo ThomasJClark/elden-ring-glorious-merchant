@@ -24,8 +24,7 @@ static void setup_logger(const wchar_t *dll_filename)
         std::make_shared<spdlog::sinks::daily_file_sink_st>(log_file.string(), 0, 0, false, 5));
     logger->flush_on(spdlog::level::info);
 
-// #if _DEBUG
-#if 1
+#if _DEBUG
     AllocConsole();
     FILE *stream;
     freopen_s(&stream, "CONOUT$", "w", stdout);
