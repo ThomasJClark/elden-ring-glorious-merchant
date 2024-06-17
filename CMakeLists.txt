@@ -48,6 +48,7 @@ add_library(EldenRingMerchantMod SHARED
   src/from/talk_commands.hpp
   src/from/param_lookup.hpp
   src/from/messages.hpp
+  src/from/game_data.hpp
   src/from/ezstate.hpp
   src/modutils.hpp
   src/modutils.cpp

@@ -15,6 +15,7 @@
 #include <param/param.hpp>
 
 #include "ermerchant_messages.hpp"
+#include "from/game_data.hpp"
 #include "from/param_lookup.hpp"
 #include "modutils.hpp"
 
@@ -69,6 +70,8 @@ static constexpr unsigned char goods_type_self_buff_incantation = 18;
 
 static constexpr unsigned char goods_sort_group_tutorial = 20;
 static constexpr unsigned char goods_sort_group_gesture = 250;
+
+static from::CS::GameDataMan **game_data_man_addr;
 
 struct shop
 {
@@ -145,6 +148,33 @@ static void solo_param_repository_lookup_shop_lineup_detour(from::find_shop_menu
     }
 
     solo_param_repository_lookup_shop_lineup(result, shop_type, id);
+}
+
+static void (*open_regular_shop)(void *, long long, long long);
+
+/**
+ * Hook for OpenRegularShop()
+ *
+ * Change the default sort order when opening one of the shops added by this mod.
+ */
+static void open_regular_shop_detour(void *unk, long long begin_id, long long end_id)
+{
+    open_regular_shop(unk, begin_id, end_id);
+
+    for (auto &shop : mod_shops)
+    {
+        if (begin_id == shop.id)
+        {
+            auto game_data_man = *game_data_man_addr;
+            if (game_data_man != nullptr)
+            {
+                for (auto &sort : game_data_man->menu_system_save_load->sorts)
+                {
+                    sort = from::menu_sort::item_type_ascending;
+                }
+            }
+        }
+    }
 }
 
 void ermerchant::setup_shops()
@@ -402,4 +432,30 @@ void ermerchant::setup_shops()
             .offset = -129,
         },
         solo_param_repository_lookup_shop_lineup_detour, solo_param_repository_lookup_shop_lineup);
+
+    // Hook OpenRegularShop() to perform some memory hacks when opening up one of the Glorious
+    // Merchant shops, in order to change the default sort order. Sorting by item type suits very
+    // large lists better.
+    modutils::hook(
+        {
+            .aob = "4c 8b 49 18"           // mov    r9, [rcx + 0x18]
+                   "48 8b d9"              // mov    rbx,rcx
+                   "48 8d 4c 24 20"        // lea    rcx, [rsp + 0x20]
+                   "e8 ?? ?? ?? ??"        // call   OpenRegularShopInner
+                   "48 8d 4c 24 20"        // lea    rcx, [rsp + 0x20]
+                   "0f 10 00"              // movups xmm0, [rax]
+                   "c7 43 10 05 00 00 00", // mov    [rbx + 0x10], 5
+            .offset = -6,
+        },
+        open_regular_shop_detour, open_regular_shop);
+
+    game_data_man_addr = modutils::scan<from::CS::GameDataMan *>({
+        .aob = "48 8B 05 ?? ?? ?? ??" // mov rax, [GameDataMan]
+               "48 85 C0"             // test rax, rax
+               "74 05"                // je 10
+               "48 8B 40 58"          // move rax, [rax + 0x58]
+               "C3"                   // ret
+               "C3",                  // ret
+        .relative_offsets = {{3, 7}},
+    });
 }
