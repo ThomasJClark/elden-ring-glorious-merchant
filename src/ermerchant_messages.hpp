@@ -10,6 +10,7 @@ namespace ermerchant
 
 namespace event_text_for_talk
 {
+// New messages added by the mod
 static constexpr int weapons = 99999000;
 static constexpr int armor = 99999001;
 static constexpr int spells = 99999002;
@@ -27,6 +28,8 @@ static constexpr int browse_cut_content = 99999032;
 static constexpr int goods = 99999033;
 static constexpr int unlock = 99999100;
 
+// Existing messages, for searching for particular talkscript states
+static constexpr int about_kale = 28000002;
 static constexpr int leave = 20000009;
 static constexpr int purchase = 20000010;
 static constexpr int sell = 20000011;

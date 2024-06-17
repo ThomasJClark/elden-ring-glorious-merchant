@@ -64,5 +64,7 @@ constexpr EzState::command open_puppet_shop{.bank = 1, .id = 144};
 constexpr EzState::command open_dupe_shop{.bank = 1, .id = 146};
 constexpr EzState::command set_event_flag_value{.bank = 1, .id = 147};
 constexpr EzState::command open_champions_equipment_sho{.bank = 1, .id = 148};
+constexpr EzState::command add_talk_list_data_if{.bank = 5, .id = 19};
+
 }
 }

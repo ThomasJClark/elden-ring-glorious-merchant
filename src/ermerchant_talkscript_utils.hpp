@@ -171,8 +171,9 @@ ADD_TALK_LIST_DATA_ARGS(ashes_of_war, 53, ermerchant::event_text_for_talk::ashes
 ADD_TALK_LIST_DATA_ARGS(armor, 54, ermerchant::event_text_for_talk::armor);
 ADD_TALK_LIST_DATA_ARGS(talismans, 55, ermerchant::event_text_for_talk::talismans);
 ADD_TALK_LIST_DATA_ARGS(items, 56, ermerchant::event_text_for_talk::items);
-ADD_TALK_LIST_DATA_ARGS(gestures, 57, ermerchant::event_text_for_talk::gestures);
-std::array<from::EzState::event, 12> browse_inventory_events = {
+// TODO implement AddGesture events
+// ADD_TALK_LIST_DATA_ARGS(gestures, 57, ermerchant::event_text_for_talk::gestures);
+std::array<from::EzState::event, 11> browse_inventory_events = {
     from::EzState::event{from::talk_command::close_shop_message},
     from::EzState::event{from::talk_command::clear_talk_list_data},
     from::EzState::event{from::talk_command::add_talk_list_data, weapons_args},
@@ -182,7 +183,7 @@ std::array<from::EzState::event, 12> browse_inventory_events = {
     from::EzState::event{from::talk_command::add_talk_list_data, armor_args},
     from::EzState::event{from::talk_command::add_talk_list_data, talismans_args},
     from::EzState::event{from::talk_command::add_talk_list_data, items_args},
-    from::EzState::event{from::talk_command::add_talk_list_data, gestures_args},
+    // from::EzState::event{from::talk_command::add_talk_list_data, gestures_args},
     from::EzState::event{from::talk_command::add_talk_list_data, leave_args},
     from::EzState::event{from::talk_command::show_shop_message,
                          show_generic_dialog_shop_message_arg_list},
@@ -291,13 +292,14 @@ from::EzState::state browse_inventory_items_successor_state = {
  */
 ADD_TALK_LIST_DATA_ARGS(cut_armor, 50, ermerchant::event_text_for_talk::armor);
 ADD_TALK_LIST_DATA_ARGS(cut_goods, 51, ermerchant::event_text_for_talk::goods);
-ADD_TALK_LIST_DATA_ARGS(cut_gestures, 52, ermerchant::event_text_for_talk::gestures);
-std::array<from::EzState::event, 7> browse_cut_content_events = {
+// TODO implement AddGesture events
+// ADD_TALK_LIST_DATA_ARGS(cut_gestures, 52, ermerchant::event_text_for_talk::gestures);
+std::array<from::EzState::event, 6> browse_cut_content_events = {
     from::EzState::event{from::talk_command::close_shop_message},
     from::EzState::event{from::talk_command::clear_talk_list_data},
     from::EzState::event{from::talk_command::add_talk_list_data, cut_armor_args},
     from::EzState::event{from::talk_command::add_talk_list_data, cut_goods_args},
-    from::EzState::event{from::talk_command::add_talk_list_data, cut_gestures_args},
+    // from::EzState::event{from::talk_command::add_talk_list_data, cut_gestures_args},
     from::EzState::event{from::talk_command::add_talk_list_data, leave_args},
     from::EzState::event{from::talk_command::show_shop_message,
                          show_generic_dialog_shop_message_arg_list},

@@ -30,17 +30,17 @@ static bool patch_states(from::EzState::state_group *state_group)
 {
     from::EzState::event *add_menu1_event = nullptr;
     from::EzState::event *add_menu2_event = nullptr;
+    from::EzState::event *about_kale_event = nullptr;
     from::EzState::state *menu_transition_state = nullptr;
 
     for (auto &state : state_group->states)
     {
-        // Look for "Purchase"/"Sell" menu items indicating the main menu for a merchant
+        // Look for commands indicating Kalé's main menu state
         for (auto &event : state.entry_events)
         {
             if (event.command == from::talk_command::add_talk_list_data)
             {
                 auto message_id = get_int_value(event.args[1]);
-
                 if (message_id == ermerchant::event_text_for_talk::purchase)
                 {
                     add_menu1_event = &event;
@@ -57,6 +57,14 @@ static bool patch_states(from::EzState::state_group *state_group)
                     return true;
                 }
             }
+            else if (event.command == from::talk_command::add_talk_list_data_if)
+            {
+                auto message_id = get_int_value(event.args[2]);
+                if (message_id == ermerchant::event_text_for_talk::about_kale)
+                {
+                    about_kale_event = &event;
+                }
+            }
         }
 
         // Look for the state where we check the chosen menu item and transition to a new state.
@@ -71,7 +79,7 @@ static bool patch_states(from::EzState::state_group *state_group)
         }
     }
 
-    if (!add_menu1_event || !add_menu2_event || !menu_transition_state)
+    if (!add_menu1_event || !add_menu2_event || !about_kale_event || !menu_transition_state)
     {
         return false;
     }
