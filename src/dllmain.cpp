@@ -41,8 +41,8 @@ static void setup_mod()
 {
     modutils::initialize();
 
-    spdlog::info("Sleeping an extra 5s to work potential compatibility issues...");
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    spdlog::info("Sleeping an extra 15s to work potential compatibility issues...");
+    std::this_thread::sleep_for(std::chrono::seconds(15));
 
     spdlog::info("Hooking messages...");
     ermerchant::setup_messages();
@@ -52,9 +52,6 @@ static void setup_mod()
 
     spdlog::info("Hooking talkscripts...");
     ermerchant::setup_talkscript();
-
-    spdlog::info("Sleeping an extra 10s to work potential compatibility issues...");
-    std::this_thread::sleep_for(std::chrono::seconds(10));
 
     modutils::enable_hooks();
     spdlog::info("Initialized mod");
