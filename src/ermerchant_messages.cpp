@@ -74,7 +74,7 @@ void ermerchant::setup_messages()
     else
     {
         spdlog::warn("Unknown language \"{}\", defaulting to English", language);
-        mod_event_text_for_talk = &event_text_for_talk_by_lang.at("engus");
+        mod_event_text_for_talk = &event_text_for_talk_by_lang.at("english");
     }
 
     auto msg_repository_address = modutils::scan<from::CS::MsgRepositoryImp *>({
