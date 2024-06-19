@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.28.1)
 set(CMAKE_GENERATOR_PLATFORM x64)
 
 project(EldenRingMerchantMod
-  VERSION   "1.0.2"
+  VERSION   "1.0.3"
   LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -30,8 +30,9 @@ FetchContent_Declare(spdlog
 # Set iterator debug level to 0 for ELDEN RING ABI compatibility
 add_definitions(-D_ITERATOR_DEBUG_LEVEL=0)
 FetchContent_Declare(liber
-  GIT_REPOSITORY        https://github.com/Dasaav-dsv/libER.git
-  GIT_TAG               f9c4aaa80e9701c9527195ae3486bc40d33040ed)
+  # Fork with some hacks for Japanese eldenring.exe compatibility
+  GIT_REPOSITORY        https://github.com/ThomasJClark/libER.git
+  GIT_TAG               0f79beb744d614e298c7c9ca404fb8c7fa69adb0)
 
 FetchContent_MakeAvailable(minhook pattern16 spdlog liber)
 
