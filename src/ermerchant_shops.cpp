@@ -248,7 +248,7 @@ struct shop
     std::vector<from::paramdef::SHOP_LINEUP_PARAM> lineups;
 };
 
-static std::array<shop, 12> mod_shops = {
+static std::array<shop, 22> mod_shops = {
     shop{.id = ermerchant::shops::weapons},
     shop{.id = ermerchant::shops::armor},
     shop{.id = ermerchant::shops::spells},
@@ -261,6 +261,16 @@ static std::array<shop, 12> mod_shops = {
     shop{.id = ermerchant::shops::miscellaneous_items},
     shop{.id = ermerchant::shops::cut_goods},
     shop{.id = ermerchant::shops::cut_armor},
+    shop{.id = ermerchant::shops::dlc_weapons},
+    shop{.id = ermerchant::shops::dlc_armor},
+    shop{.id = ermerchant::shops::dlc_spells},
+    shop{.id = ermerchant::shops::dlc_talismans},
+    shop{.id = ermerchant::shops::dlc_ammunition},
+    shop{.id = ermerchant::shops::dlc_ashes_of_war},
+    shop{.id = ermerchant::shops::dlc_spirit_summons},
+    shop{.id = ermerchant::shops::dlc_consumables},
+    shop{.id = ermerchant::shops::dlc_materials},
+    shop{.id = ermerchant::shops::dlc_miscellaneous_items},
 };
 
 static from::find_shop_menu_result *(*solo_param_repository_lookup_shop_menu)(
@@ -362,6 +372,16 @@ void ermerchant::setup_shops()
     auto &miscellaneous_item_lineups = mod_shops[9].lineups;
     auto &cut_good_lineups = mod_shops[10].lineups;
     auto &cut_armor_lineups = mod_shops[11].lineups;
+    auto &dlc_weapon_lineups = mod_shops[12].lineups;
+    auto &dlc_armor_lineups = mod_shops[13].lineups;
+    auto &dlc_spell_lineups = mod_shops[14].lineups;
+    auto &dlc_talisman_lineups = mod_shops[15].lineups;
+    auto &dlc_ammunition_lineups = mod_shops[16].lineups;
+    auto &dlc_ashes_of_war_lineups = mod_shops[17].lineups;
+    auto &dlc_spirit_summon_lineups = mod_shops[18].lineups;
+    auto &dlc_consumable_lineups = mod_shops[19].lineups;
+    auto &dlc_material_lineups = mod_shops[20].lineups;
+    auto &dlc_miscellaneous_item_lineups = mod_shops[21].lineups;
 
     // Iterate through every obtainable item in the game and create shop lineups in the appropriate
     // ranges
@@ -381,9 +401,16 @@ void ermerchant::setup_shops()
             continue;
         }
 
+        bool is_dlc = false;
+        auto weapon_name = ermerchant::get_message(from::msgbnd::weapon_name, id);
+        if (weapon_name.empty())
+        {
+            is_dlc = true;
+            weapon_name = ermerchant::get_message(from::msgbnd::dlc_weapon_name, id);
+        }
+
         // Exclude weapon entries without valid names - these are placeholders for data used by
         // non-weapons (e.g. perfumes) or unused/cut items.
-        auto weapon_name = get_message(from::msgbnd::weapon_name, id);
         if (weapon_name.empty() || weapon_name.starts_with(cut_content_prefix))
         {
             continue;
@@ -391,16 +418,31 @@ void ermerchant::setup_shops()
 
         row.sellValue = 0;
 
+        std::vector<from::paramdef::SHOP_LINEUP_PARAM> *lineups = nullptr;
+
         if (row.wepType == weapon_type_arrow || row.wepType == weapon_type_greatarrow ||
             row.wepType == weapon_type_bolt || row.wepType == weapon_type_ballista_bolt)
         {
 
-            ammunition_lineups.push_back({.equipId = (int)id, .equipType = equip_type_weapon});
+            if (is_dlc)
+            {
+                lineups = &dlc_ammunition_lineups;
+            }
+            else
+            {
+                lineups = &ammunition_lineups;
+            }
+        }
+        else if (is_dlc)
+        {
+            lineups = &dlc_weapon_lineups;
         }
         else
         {
-            weapon_lineups.push_back({.equipId = (int)id, .equipType = equip_type_weapon});
+            lineups = &weapon_lineups;
         }
+
+        lineups->push_back({.equipId = (int)id, .equipType = equip_type_weapon});
     }
 
     for (auto [id, row] :
@@ -422,7 +464,14 @@ void ermerchant::setup_shops()
             continue;
         }
 
-        auto protector_name = get_message(from::msgbnd::protector_name, id);
+        bool is_dlc = false;
+        auto protector_name = ermerchant::get_message(from::msgbnd::protector_name, id);
+        if (protector_name.empty())
+        {
+            is_dlc = true;
+            protector_name = ermerchant::get_message(from::msgbnd::dlc_protector_name, id);
+        }
+
         if (protector_name.empty() || protector_name == cut_content_prefix)
         {
             continue;
@@ -430,20 +479,35 @@ void ermerchant::setup_shops()
 
         row.sellValue = 0;
 
+        std::vector<from::paramdef::SHOP_LINEUP_PARAM> *lineups = nullptr;
+
         if (protector_name.starts_with(cut_content_prefix))
         {
-            cut_armor_lineups.push_back({.equipId = (int)id, .equipType = equip_type_protector});
+            lineups = &cut_armor_lineups;
+        }
+        else if (is_dlc)
+        {
+            lineups = &dlc_armor_lineups;
         }
         else
         {
-            armor_lineups.push_back({.equipId = (int)id, .equipType = equip_type_protector});
+            lineups = &armor_lineups;
         }
+
+        lineups->push_back({.equipId = (int)id, .equipType = equip_type_protector});
     }
 
     for (auto [id, row] :
          from::params::get_param<from::paramdef::EQUIP_PARAM_ACCESSORY_ST>(L"EquipParamAccessory"))
     {
-        auto accessory_name = get_message(from::msgbnd::accessory_name, id);
+        bool is_dlc = false;
+        auto accessory_name = ermerchant::get_message(from::msgbnd::accessory_name, id);
+        if (accessory_name.empty())
+        {
+            is_dlc = true;
+            accessory_name = ermerchant::get_message(from::msgbnd::dlc_accessory_name, id);
+        }
+
         if (accessory_name.empty() || accessory_name.starts_with(cut_content_prefix))
         {
             continue;
@@ -451,7 +515,18 @@ void ermerchant::setup_shops()
 
         row.sellValue = 0;
 
-        talisman_lineups.push_back({.equipId = (int)id, .equipType = equip_type_accessory});
+        std::vector<from::paramdef::SHOP_LINEUP_PARAM> *lineups = nullptr;
+
+        if (is_dlc)
+        {
+            lineups = &dlc_talisman_lineups;
+        }
+        else
+        {
+            lineups = &talisman_lineups;
+        }
+
+        lineups->push_back({.equipId = (int)id, .equipType = equip_type_accessory});
     }
 
     auto replacement_goods_ids = std::set<long long>();
@@ -492,7 +567,14 @@ void ermerchant::setup_shops()
             continue;
         }
 
-        auto goods_name = get_message(from::msgbnd::goods_name, id);
+        bool is_dlc = false;
+        auto goods_name = ermerchant::get_message(from::msgbnd::goods_name, id);
+        if (goods_name.empty())
+        {
+            is_dlc = true;
+            goods_name = ermerchant::get_message(from::msgbnd::dlc_goods_name, id);
+        }
+
         if (goods_name.empty() || goods_name == cut_content_prefix)
         {
             continue;
@@ -501,88 +583,114 @@ void ermerchant::setup_shops()
         row.sellValue = 0;
 
         auto event_flag_it = goods_event_flags.find(id);
-        auto shop_lineup = from::paramdef::SHOP_LINEUP_PARAM{
-            .equipId = (int)id,
-            .eventFlag_forStock =
-                event_flag_it == goods_event_flags.end() ? 0 : event_flag_it->second,
-            .equipType = equip_type_goods};
 
-        // Put cut items in a separate shop
+        std::vector<from::paramdef::SHOP_LINEUP_PARAM> *lineups = nullptr;
+
         if (goods_name.starts_with(cut_content_prefix) || !row.iconId)
         {
-            cut_good_lineups.push_back(shop_lineup);
-            continue;
+            // Put cut items in a separate shop
+            lineups = &cut_good_lineups;
         }
-
-        // These are classified as materials, but should really appear in the consumables shop
-        if (id == goods_golden_seed_id || id == goods_sacred_tear_id)
+        else if (id == goods_golden_seed_id || id == goods_sacred_tear_id)
         {
-            consumable_lineups.push_back(shop_lineup);
-            continue;
+            // These are classified as materials, but should really appear in the consumables shop
+            lineups = is_dlc ? &dlc_consumable_lineups : &consumable_lineups;
         }
-
-        switch (row.goodsType)
+        else
         {
-        case goods_type_normal_item:
-            if (row.isConsume && !row.disable_offline)
+            switch (row.goodsType)
             {
-                consumable_lineups.push_back(shop_lineup);
-            }
-            else
-            {
-                miscellaneous_item_lineups.push_back(shop_lineup);
-            }
-            break;
+            case goods_type_normal_item:
+                if (row.isConsume && !row.disable_offline)
+                {
+                    lineups = is_dlc ? &dlc_consumable_lineups : &consumable_lineups;
+                }
+                else
+                {
+                    lineups =
+                        is_dlc ? &dlc_miscellaneous_item_lineups : &miscellaneous_item_lineups;
+                }
+                break;
 
-        case goods_type_sorcery:
-        case goods_type_incantation:
-        case goods_type_self_buff_sorcery:
-        case goods_type_self_buff_incantation:
-            spell_lineups.push_back(shop_lineup);
-            break;
+            case goods_type_sorcery:
+            case goods_type_incantation:
+            case goods_type_self_buff_sorcery:
+            case goods_type_self_buff_incantation:
+                lineups = is_dlc ? &dlc_spell_lineups : &spell_lineups;
+                break;
 
-        case goods_type_spirit_summon_lesser:
-        case goods_type_spirit_summon_greater: {
-            // Exclude duplicate entries for upgraded spirit ashes
-            auto upgrade_level = id % 100;
-            if (upgrade_level == 0)
-            {
-                spirit_summon_lineups.push_back(shop_lineup);
+            case goods_type_spirit_summon_lesser:
+            case goods_type_spirit_summon_greater: {
+                // Exclude duplicate entries for upgraded spirit ashes
+                auto upgrade_level = id % 100;
+                if (upgrade_level == 0)
+                {
+                    lineups = is_dlc ? &dlc_spirit_summon_lineups : &spirit_summon_lineups;
+                }
+                break;
             }
-            break;
+
+            case goods_type_remembrance:
+            case goods_type_regenerative_material:
+                lineups = is_dlc ? &dlc_consumable_lineups : &consumable_lineups;
+                break;
+
+            case goods_type_crafting_material:
+            case goods_type_reinforcement_material:
+                lineups = is_dlc ? &dlc_material_lineups : &material_lineups;
+                break;
+
+            case goods_type_key_item:
+            case goods_type_info_item:
+            case goods_type_wondrous_physick:
+            case goods_type_wondrous_physick_tear:
+            case goods_type_great_rune:
+                lineups = is_dlc ? &dlc_miscellaneous_item_lineups : &miscellaneous_item_lineups;
+                break;
+            }
         }
 
-        case goods_type_remembrance:
-        case goods_type_regenerative_material:
-            consumable_lineups.push_back(shop_lineup);
-            break;
-
-        case goods_type_crafting_material:
-        case goods_type_reinforcement_material:
-            material_lineups.push_back(shop_lineup);
-            break;
-
-        case goods_type_key_item:
-        case goods_type_info_item:
-        case goods_type_wondrous_physick:
-        case goods_type_wondrous_physick_tear:
-        case goods_type_great_rune:
-            miscellaneous_item_lineups.push_back(shop_lineup);
-            break;
+        if (lineups)
+        {
+            lineups->push_back({
+                .equipId = (int)id,
+                .eventFlag_forStock =
+                    event_flag_it == goods_event_flags.end() ? 0 : event_flag_it->second,
+                .equipType = equip_type_goods,
+            });
         }
     }
 
     for (auto [id, row] :
          from::params::get_param<from::paramdef::EQUIP_PARAM_GEM_ST>(L"EquipParamGem"))
     {
-        auto gem_name = get_message(from::msgbnd::gem_name, id);
+        bool is_dlc = false;
+        auto gem_name = ermerchant::get_message(from::msgbnd::gem_name, id);
+        if (gem_name.empty())
+        {
+            is_dlc = true;
+            gem_name = ermerchant::get_message(from::msgbnd::dlc_gem_name, id);
+        }
+
         if (gem_name.empty() || gem_name.starts_with(cut_content_prefix))
         {
             continue;
         }
 
         row.sellValue = 0;
-        ash_of_war_lineups.push_back({.equipId = (int)id, .equipType = equip_type_gem});
+
+        std::vector<from::paramdef::SHOP_LINEUP_PARAM> *lineups = nullptr;
+
+        if (is_dlc)
+        {
+            lineups = &dlc_ashes_of_war_lineups;
+        }
+        else
+        {
+            lineups = &ash_of_war_lineups;
+        }
+
+        lineups->push_back({.equipId = (int)id, .equipType = equip_type_gem});
     }
 
     // Hook SoloParamRepositoryImp::LookupShopMenu to return the new shops added by the mod

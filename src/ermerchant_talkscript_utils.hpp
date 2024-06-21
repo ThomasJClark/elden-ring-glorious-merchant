@@ -61,6 +61,10 @@ extern from::EzState::state browse_inventory_state;
 extern from::EzState::state browse_inventory_successor_state;
 extern from::EzState::state browse_inventory_items_state;
 extern from::EzState::state browse_inventory_items_successor_state;
+extern from::EzState::state browse_dlc_inventory_state;
+extern from::EzState::state browse_dlc_inventory_successor_state;
+extern from::EzState::state browse_dlc_inventory_items_state;
+extern from::EzState::state browse_dlc_inventory_items_successor_state;
 extern from::EzState::state browse_cut_content_state;
 extern from::EzState::state browse_cut_content_successor_state;
 
@@ -160,6 +164,26 @@ OPEN_REGULAR_SHOP_STATE(5210, cut_goods_shop_state, &browse_cut_content_state,
                         ermerchant::shops::cut_goods);
 OPEN_REGULAR_SHOP_STATE(5211, cut_armor_shop_state, &browse_cut_content_state,
                         ermerchant::shops::cut_armor);
+OPEN_REGULAR_SHOP_STATE(5800, dlc_weapons_shop_state, &browse_dlc_inventory_state,
+                        ermerchant::shops::dlc_weapons);
+OPEN_REGULAR_SHOP_STATE(5801, dlc_armor_shop_state, &browse_dlc_inventory_state,
+                        ermerchant::shops::dlc_armor);
+OPEN_REGULAR_SHOP_STATE(5802, dlc_spells_shop_state, &browse_dlc_inventory_state,
+                        ermerchant::shops::dlc_spells);
+OPEN_REGULAR_SHOP_STATE(5803, dlc_talismans_shop_state, &browse_dlc_inventory_state,
+                        ermerchant::shops::dlc_talismans);
+OPEN_REGULAR_SHOP_STATE(5804, dlc_ammunition_shop_state, &browse_dlc_inventory_state,
+                        ermerchant::shops::dlc_ammunition);
+OPEN_REGULAR_SHOP_STATE(5805, dlc_ashes_of_war_shop_state, &browse_dlc_inventory_state,
+                        ermerchant::shops::dlc_ashes_of_war);
+OPEN_REGULAR_SHOP_STATE(5806, dlc_spirit_summons_shop_state, &browse_dlc_inventory_items_state,
+                        ermerchant::shops::dlc_spirit_summons);
+OPEN_REGULAR_SHOP_STATE(5807, dlc_consumables_shop_state, &browse_dlc_inventory_items_state,
+                        ermerchant::shops::dlc_consumables);
+OPEN_REGULAR_SHOP_STATE(5808, dlc_materials_shop_state, &browse_dlc_inventory_items_state,
+                        ermerchant::shops::dlc_materials);
+OPEN_REGULAR_SHOP_STATE(5809, dlc_miscellaneous_items_shop_state, &browse_dlc_inventory_items_state,
+                        ermerchant::shops::dlc_miscellaneous_items);
 
 /*
  * "Browse Inventory" submenu
@@ -171,9 +195,10 @@ ADD_TALK_LIST_DATA_ARGS(ashes_of_war, 53, ermerchant::event_text_for_talk::ashes
 ADD_TALK_LIST_DATA_ARGS(armor, 54, ermerchant::event_text_for_talk::armor);
 ADD_TALK_LIST_DATA_ARGS(talismans, 55, ermerchant::event_text_for_talk::talismans);
 ADD_TALK_LIST_DATA_ARGS(items, 56, ermerchant::event_text_for_talk::items);
+ADD_TALK_LIST_DATA_ARGS(dlc, 57, ermerchant::event_text_for_talk::dlc);
 // TODO implement AddGesture events
 // ADD_TALK_LIST_DATA_ARGS(gestures, 57, ermerchant::event_text_for_talk::gestures);
-std::array<from::EzState::event, 11> browse_inventory_events = {
+std::array<from::EzState::event, 12> browse_inventory_events = {
     from::EzState::event{from::talk_command::close_shop_message},
     from::EzState::event{from::talk_command::clear_talk_list_data},
     from::EzState::event{from::talk_command::add_talk_list_data, weapons_args},
@@ -183,6 +208,7 @@ std::array<from::EzState::event, 11> browse_inventory_events = {
     from::EzState::event{from::talk_command::add_talk_list_data, armor_args},
     from::EzState::event{from::talk_command::add_talk_list_data, talismans_args},
     from::EzState::event{from::talk_command::add_talk_list_data, items_args},
+    from::EzState::event{from::talk_command::add_talk_list_data, dlc_args},
     // from::EzState::event{from::talk_command::add_talk_list_data, gestures_args},
     from::EzState::event{from::talk_command::add_talk_list_data, leave_args},
     from::EzState::event{from::talk_command::show_shop_message,
@@ -220,12 +246,17 @@ from::EzState::transition talismans_transition(&talismans_shop_state,
 from::EzState::transition items_transition(&browse_inventory_items_state,
                                            "\x57\x84\x82\x38\x00\x00\x00\x95\xa1");
 // if GetTalkListEntryResult() == 57
-from::EzState::transition gestures_transition(nullptr, "\x57\x84\x82\x39\x00\x00\x00\x95\xa1");
+from::EzState::transition dlc_transition(&browse_dlc_inventory_state,
+                                         "\x57\x84\x82\x39\x00\x00\x00\x95\xa1");
+// if GetTalkListEntryResult() == 58
+from::EzState::transition gestures_transition(nullptr, "\x57\x84\x82\x3a\x00\x00\x00\x95\xa1");
 
 std::array<from::EzState::transition *, 10> browse_inventory_successor_transitions = {
-    &weapons_transition,      &ammunition_transition, &spells_transition,
-    &ashes_of_war_transition, &armor_transition,      &talismans_transition,
-    &items_transition,        &gestures_transition,   &main_menu_return_transition,
+    &weapons_transition,  &ammunition_transition,
+    &spells_transition,   &ashes_of_war_transition,
+    &armor_transition,    &talismans_transition,
+    &items_transition,    &dlc_transition,
+    &gestures_transition, &main_menu_return_transition,
 };
 
 from::EzState::state browse_inventory_successor_state = {
@@ -285,6 +316,143 @@ std::array<from::EzState::transition *, 5> browse_inventory_items_successor_tran
 from::EzState::state browse_inventory_items_successor_state = {
     .id = 5003,
     .transitions = browse_inventory_items_successor_transitions,
+};
+
+/*
+ * "Browse DLC Inventory" submenu
+ */
+ADD_TALK_LIST_DATA_ARGS(dlc_weapons, 50, ermerchant::event_text_for_talk::weapons);
+ADD_TALK_LIST_DATA_ARGS(dlc_ammunition, 51, ermerchant::event_text_for_talk::ammunition);
+ADD_TALK_LIST_DATA_ARGS(dlc_spells, 52, ermerchant::event_text_for_talk::spells);
+ADD_TALK_LIST_DATA_ARGS(dlc_ashes_of_war, 53, ermerchant::event_text_for_talk::ashes_of_war);
+ADD_TALK_LIST_DATA_ARGS(dlc_armor, 54, ermerchant::event_text_for_talk::armor);
+ADD_TALK_LIST_DATA_ARGS(dlc_talismans, 55, ermerchant::event_text_for_talk::talismans);
+ADD_TALK_LIST_DATA_ARGS(dlc_items, 56, ermerchant::event_text_for_talk::items);
+// TODO implement AddGesture events
+// ADD_TALK_LIST_DATA_ARGS(gestures, 57, ermerchant::event_text_for_talk::gestures);
+std::array<from::EzState::event, 11> browse_dlc_inventory_events = {
+    from::EzState::event{from::talk_command::close_shop_message},
+    from::EzState::event{from::talk_command::clear_talk_list_data},
+    from::EzState::event{from::talk_command::add_talk_list_data, dlc_weapons_args},
+    from::EzState::event{from::talk_command::add_talk_list_data, dlc_ammunition_args},
+    from::EzState::event{from::talk_command::add_talk_list_data, dlc_spells_args},
+    from::EzState::event{from::talk_command::add_talk_list_data, dlc_ashes_of_war_args},
+    from::EzState::event{from::talk_command::add_talk_list_data, dlc_armor_args},
+    from::EzState::event{from::talk_command::add_talk_list_data, dlc_talismans_args},
+    from::EzState::event{from::talk_command::add_talk_list_data, dlc_items_args},
+    // from::EzState::event{from::talk_command::add_talk_list_data, gestures_args},
+    from::EzState::event{from::talk_command::add_talk_list_data, leave_args},
+    from::EzState::event{from::talk_command::show_shop_message,
+                         show_generic_dialog_shop_message_arg_list},
+};
+from::EzState::transition browse_dlc_inventory_next_transition(
+    &browse_dlc_inventory_successor_state, talk_menu_closed_evaluator);
+std::array<from::EzState::transition *, 1> browse_dlc_inventory_transitions = {
+    &browse_dlc_inventory_next_transition};
+from::EzState::state browse_dlc_inventory_state = {
+    .id = 5700,
+    .transitions = browse_dlc_inventory_transitions,
+    .entry_events = browse_dlc_inventory_events,
+};
+
+// if GetTalkListEntryResult() == 50
+from::EzState::transition dlc_weapons_transition(&dlc_weapons_shop_state,
+                                                 "\x57\x84\x82\x32\x00\x00\x00\x95\xa1");
+// if GetTalkListEntryResult() == 51
+from::EzState::transition dlc_ammunition_transition(&dlc_ammunition_shop_state,
+                                                    "\x57\x84\x82\x33\x00\x00\x00\x95\xa1");
+// if GetTalkListEntryResult() == 52
+from::EzState::transition dlc_spells_transition(&dlc_spells_shop_state,
+                                                "\x57\x84\x82\x34\x00\x00\x00\x95\xa1");
+// if GetTalkListEntryResult() == 53
+from::EzState::transition dlc_ashes_of_war_transition(&dlc_ashes_of_war_shop_state,
+                                                      "\x57\x84\x82\x35\x00\x00\x00\x95\xa1");
+// if GetTalkListEntryResult() == 54
+from::EzState::transition dlc_armor_transition(&dlc_armor_shop_state,
+                                               "\x57\x84\x82\x36\x00\x00\x00\x95\xa1");
+// if GetTalkListEntryResult() == 55
+from::EzState::transition dlc_talismans_transition(&dlc_talismans_shop_state,
+                                                   "\x57\x84\x82\x37\x00\x00\x00\x95\xa1");
+// if GetTalkListEntryResult() == 56
+from::EzState::transition dlc_items_transition(&browse_dlc_inventory_items_state,
+                                               "\x57\x84\x82\x38\x00\x00\x00\x95\xa1");
+// if GetTalkListEntryResult() == 57
+from::EzState::transition dlc_gestures_transition(nullptr, "\x57\x84\x82\x39\x00\x00\x00\x95\xa1");
+
+// else
+from::EzState::transition dlc_return_to_browse_inventory_transition(&browse_inventory_state,
+                                                                    "\x41\xa1");
+
+std::array<from::EzState::transition *, 10> browse_dlc_inventory_successor_transitions = {
+    &dlc_weapons_transition,
+    &dlc_ammunition_transition,
+    &dlc_spells_transition,
+    &dlc_ashes_of_war_transition,
+    &dlc_armor_transition,
+    &dlc_talismans_transition,
+    &dlc_items_transition,
+    &dlc_gestures_transition,
+    &dlc_return_to_browse_inventory_transition,
+};
+
+from::EzState::state browse_dlc_inventory_successor_state = {
+    .id = 5701,
+    .transitions = browse_dlc_inventory_successor_transitions,
+};
+
+/*
+ * "Browse DLC Inventory" > "Items" submenu
+ */
+ADD_TALK_LIST_DATA_ARGS(dlc_consumables, 50, ermerchant::event_text_for_talk::consumables);
+ADD_TALK_LIST_DATA_ARGS(dlc_materials, 51, ermerchant::event_text_for_talk::materials);
+ADD_TALK_LIST_DATA_ARGS(dlc_spirit_summons, 52, ermerchant::event_text_for_talk::spirit_summons);
+ADD_TALK_LIST_DATA_ARGS(dlc_miscellaneous_items, 53,
+                        ermerchant::event_text_for_talk::miscellaneous_items);
+std::array<from::EzState::event, 8> browse_dlc_inventory_items_events = {
+    from::EzState::event{from::talk_command::close_shop_message},
+    from::EzState::event{from::talk_command::clear_talk_list_data},
+    from::EzState::event{from::talk_command::add_talk_list_data, dlc_consumables_args},
+    from::EzState::event{from::talk_command::add_talk_list_data, dlc_materials_args},
+    from::EzState::event{from::talk_command::add_talk_list_data, dlc_spirit_summons_args},
+    from::EzState::event{from::talk_command::add_talk_list_data, dlc_miscellaneous_items_args},
+    from::EzState::event{from::talk_command::add_talk_list_data, leave_args},
+    from::EzState::event{from::talk_command::show_shop_message,
+                         show_generic_dialog_shop_message_arg_list},
+};
+from::EzState::transition browse_dlc_inventory_items_next_transition(
+    &browse_dlc_inventory_items_successor_state, talk_menu_closed_evaluator);
+std::array<from::EzState::transition *, 1> browse_dlc_inventory_items_transitions = {
+    &browse_dlc_inventory_items_next_transition};
+from::EzState::state browse_dlc_inventory_items_state = {
+    .id = 5702,
+    .transitions = browse_dlc_inventory_items_transitions,
+    .entry_events = browse_dlc_inventory_items_events,
+};
+
+// if GetTalkListEntryResult() == 50
+from::EzState::transition dlc_consumables_transition(&dlc_consumables_shop_state,
+                                                     "\x57\x84\x82\x32\x00\x00\x00\x95\xa1");
+// elif GetTalkListEntryResult() == 51
+from::EzState::transition dlc_materials_transition(&dlc_materials_shop_state,
+                                                   "\x57\x84\x82\x33\x00\x00\x00\x95\xa1");
+// elif GetTalkListEntryResult() == 52
+from::EzState::transition dlc_spirit_summons_transition(&dlc_spirit_summons_shop_state,
+                                                        "\x57\x84\x82\x34\x00\x00\x00\x95\xa1");
+// elif GetTalkListEntryResult() == 53
+from::EzState::transition dlc_miscellaneous_items_transition(
+    &dlc_miscellaneous_items_shop_state, "\x57\x84\x82\x35\x00\x00\x00\x95\xa1");
+// else
+from::EzState::transition dlc_items_return_transition(&browse_dlc_inventory_state, "\x41\xa1");
+
+std::array<from::EzState::transition *, 5> browse_dlc_inventory_items_successor_transitions = {
+    &dlc_consumables_transition,    &dlc_materials_transition,
+    &dlc_spirit_summons_transition, &dlc_miscellaneous_items_transition,
+    &dlc_items_return_transition,
+};
+
+from::EzState::state browse_dlc_inventory_items_successor_state = {
+    .id = 5703,
+    .transitions = browse_dlc_inventory_items_successor_transitions,
 };
 
 /*

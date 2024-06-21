@@ -25,6 +25,11 @@ enum class msgbnd : unsigned int
     menu_text = 200,
     line_help = 201,
     dialogues = 204,
+    dlc_weapon_name = 310,
+    dlc_protector_name = 313,
+    dlc_accessory_name = 316,
+    dlc_goods_name = 319,
+    dlc_gem_name = 322,
 };
 
 }

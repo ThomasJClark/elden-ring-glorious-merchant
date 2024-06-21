@@ -27,6 +27,7 @@ static constexpr int items = 99999031;
 static constexpr int browse_cut_content = 99999032;
 static constexpr int goods = 99999033;
 static constexpr int unlock = 99999100;
+static constexpr int dlc = 99999200;
 
 // Existing messages, for searching for particular talkscript states
 static constexpr int about_kale = 28000002;
