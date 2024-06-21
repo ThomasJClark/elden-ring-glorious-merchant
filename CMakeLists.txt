@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.28.1)
 set(CMAKE_GENERATOR_PLATFORM x64)
 
 project(EldenRingMerchantMod
-  VERSION   "1.0.3"
+  VERSION   "1.0.4"
   LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -27,14 +27,14 @@ FetchContent_Declare(spdlog
   GIT_REPOSITORY        https://github.com/gabime/spdlog.git
   GIT_TAG               v1.13.0)
 
-# Set iterator debug level to 0 for ELDEN RING ABI compatibility
+# # Set iterator debug level to 0 for ELDEN RING ABI compatibility
 add_definitions(-D_ITERATOR_DEBUG_LEVEL=0)
-FetchContent_Declare(liber
-  # Fork with some hacks for Japanese eldenring.exe compatibility
-  GIT_REPOSITORY        https://github.com/ThomasJClark/libER.git
-  GIT_TAG               0f79beb744d614e298c7c9ca404fb8c7fa69adb0)
+# FetchContent_Declare(liber
+#   # Fork with some hacks for Japanese eldenring.exe compatibility
+#   GIT_REPOSITORY        https://github.com/ThomasJClark/libER.git
+#   GIT_TAG               0f79beb744d614e298c7c9ca404fb8c7fa69adb0)
 
-FetchContent_MakeAvailable(minhook pattern16 spdlog liber)
+FetchContent_MakeAvailable(minhook pattern16 spdlog )
 
 add_library(pattern16 INTERFACE)
 target_include_directories(pattern16 INTERFACE ${pattern16_SOURCE_DIR}/include)
@@ -51,6 +51,8 @@ add_library(EldenRingMerchantMod SHARED
   src/from/messages.hpp
   src/from/game_data.hpp
   src/from/ezstate.hpp
+  src/from/params.hpp
+  src/from/params.cpp
   src/modutils.hpp
   src/modutils.cpp
   src/ermerchant_talkscript.hpp
@@ -71,12 +73,12 @@ add_custom_command(TARGET EldenRingMerchantMod POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:EldenRingMerchantMod> ${CMAKE_SOURCE_DIR}/LICENSE.txt
   COMMAND_EXPAND_LISTS)
 
-# Allow importing internal symbols using libER
-target_include_directories(EldenRingMerchantMod PUBLIC ${liber_SOURCE_DIR}/symbols)
+# # Allow importing internal symbols using libER
+# target_include_directories(EldenRingMerchantMod PUBLIC ${liber_SOURCE_DIR}/symbols)
 
 target_link_libraries(EldenRingMerchantMod
   minhook
   pattern16
   spdlog
-  libER_static
+  # libER_static
   ${CMAKE_SOURCE_DIR}/steam_api64.lib)

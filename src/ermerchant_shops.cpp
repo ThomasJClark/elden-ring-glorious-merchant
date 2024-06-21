@@ -11,12 +11,17 @@
 #include <set>
 #include <vector>
 
-#include <coresystem/cs_param.hpp>
-#include <param/param.hpp>
+#include "from/paramdef/EQUIP_PARAM_ACCESSORY_ST.hpp"
+#include "from/paramdef/EQUIP_PARAM_GEM_ST.hpp"
+#include "from/paramdef/EQUIP_PARAM_GOODS_ST.hpp"
+#include "from/paramdef/EQUIP_PARAM_PROTECTOR_ST.hpp"
+#include "from/paramdef/EQUIP_PARAM_WEAPON_ST.hpp"
+#include "from/paramdef/SHOP_LINEUP_PARAM.hpp"
 
 #include "ermerchant_messages.hpp"
 #include "from/game_data.hpp"
 #include "from/param_lookup.hpp"
+#include "from/params.hpp"
 #include "modutils.hpp"
 
 static const std::wstring cut_content_prefix = L"[ERROR]";
@@ -343,7 +348,7 @@ static void open_regular_shop_detour(void *unk, long long begin_id, long long en
 
 void ermerchant::setup_shops()
 {
-    from::CS::SoloParamRepositoryImp::wait_for_params(-1);
+    from::params::initialize();
 
     auto &weapon_lineups = mod_shops[0].lineups;
     auto &armor_lineups = mod_shops[1].lineups;
@@ -360,7 +365,8 @@ void ermerchant::setup_shops()
 
     // Iterate through every obtainable item in the game and create shop lineups in the appropriate
     // ranges
-    for (auto [id, row] : from::param::EquipParamWeapon)
+    for (auto [id, row] :
+         from::params::get_param<from::paramdef::EQUIP_PARAM_WEAPON_ST>(L"EquipParamWeapon"))
     {
         // Exclude unarmed fist
         if (id == weapon_unarmed_id)
@@ -389,15 +395,16 @@ void ermerchant::setup_shops()
             row.wepType == weapon_type_bolt || row.wepType == weapon_type_ballista_bolt)
         {
 
-            ammunition_lineups.push_back({.equipId = id, .equipType = equip_type_weapon});
+            ammunition_lineups.push_back({.equipId = (int)id, .equipType = equip_type_weapon});
         }
         else
         {
-            weapon_lineups.push_back({.equipId = id, .equipType = equip_type_weapon});
+            weapon_lineups.push_back({.equipId = (int)id, .equipType = equip_type_weapon});
         }
     }
 
-    for (auto [id, row] : from::param::EquipParamProtector)
+    for (auto [id, row] :
+         from::params::get_param<from::paramdef::EQUIP_PARAM_PROTECTOR_ST>(L"EquipParamProtector"))
     {
         // Exclude bare unarmored head/chest/etc.
         if (id == protector_bare_head_id || id == protector_bare_chest_id ||
@@ -425,15 +432,16 @@ void ermerchant::setup_shops()
 
         if (protector_name.starts_with(cut_content_prefix))
         {
-            cut_armor_lineups.push_back({.equipId = id, .equipType = equip_type_protector});
+            cut_armor_lineups.push_back({.equipId = (int)id, .equipType = equip_type_protector});
         }
         else
         {
-            armor_lineups.push_back({.equipId = id, .equipType = equip_type_protector});
+            armor_lineups.push_back({.equipId = (int)id, .equipType = equip_type_protector});
         }
     }
 
-    for (auto [id, row] : from::param::EquipParamAccessory)
+    for (auto [id, row] :
+         from::params::get_param<from::paramdef::EQUIP_PARAM_ACCESSORY_ST>(L"EquipParamAccessory"))
     {
         auto accessory_name = get_message(from::msgbnd::accessory_name, id);
         if (accessory_name.empty() || accessory_name.starts_with(cut_content_prefix))
@@ -443,11 +451,12 @@ void ermerchant::setup_shops()
 
         row.sellValue = 0;
 
-        talisman_lineups.push_back({.equipId = id, .equipType = equip_type_accessory});
+        talisman_lineups.push_back({.equipId = (int)id, .equipType = equip_type_accessory});
     }
 
     auto replacement_goods_ids = std::set<long long>();
-    for (auto [id, row] : from::param::EquipParamGoods)
+    for (auto [id, row] :
+         from::params::get_param<from::paramdef::EQUIP_PARAM_GOODS_ST>(L"EquipParamGoods"))
     {
         if (row.appearanceReplaceItemId != -1)
         {
@@ -455,7 +464,8 @@ void ermerchant::setup_shops()
         }
     }
 
-    for (auto [id, row] : from::param::EquipParamGoods)
+    for (auto [id, row] :
+         from::params::get_param<from::paramdef::EQUIP_PARAM_GOODS_ST>(L"EquipParamGoods"))
     {
         // Exclude goods which are obtained automatically in some way
         if (id == goods_memory_of_grace_id || id == goods_phantom_great_rune_id ||
@@ -492,7 +502,7 @@ void ermerchant::setup_shops()
 
         auto event_flag_it = goods_event_flags.find(id);
         auto shop_lineup = from::paramdef::SHOP_LINEUP_PARAM{
-            .equipId = id,
+            .equipId = (int)id,
             .eventFlag_forStock =
                 event_flag_it == goods_event_flags.end() ? 0 : event_flag_it->second,
             .equipType = equip_type_goods};
@@ -562,7 +572,8 @@ void ermerchant::setup_shops()
         }
     }
 
-    for (auto [id, row] : from::param::EquipParamGem)
+    for (auto [id, row] :
+         from::params::get_param<from::paramdef::EQUIP_PARAM_GEM_ST>(L"EquipParamGem"))
     {
         auto gem_name = get_message(from::msgbnd::gem_name, id);
         if (gem_name.empty() || gem_name.starts_with(cut_content_prefix))
@@ -571,7 +582,7 @@ void ermerchant::setup_shops()
         }
 
         row.sellValue = 0;
-        ash_of_war_lineups.push_back({.equipId = id, .equipType = equip_type_gem});
+        ash_of_war_lineups.push_back({.equipId = (int)id, .equipType = equip_type_gem});
     }
 
     // Hook SoloParamRepositoryImp::LookupShopMenu to return the new shops added by the mod
