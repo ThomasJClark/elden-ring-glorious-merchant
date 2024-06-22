@@ -10,6 +10,7 @@
 #include "ermerchant_messages.hpp"
 #include "ermerchant_shops.hpp"
 #include "ermerchant_talkscript.hpp"
+#include "from/params.hpp"
 #include "modutils.hpp"
 
 static std::thread mod_thread;
@@ -40,9 +41,10 @@ static void setup_logger(const wchar_t *dll_filename)
 static void setup_mod()
 {
     modutils::initialize();
+    from::params::initialize();
 
-    spdlog::info("Sleeping an extra 15s to work potential compatibility issues...");
-    std::this_thread::sleep_for(std::chrono::seconds(15));
+    spdlog::info("Sleeping an extra 10s to work potential compatibility issues...");
+    std::this_thread::sleep_for(std::chrono::seconds(10));
 
     spdlog::info("Hooking messages...");
     ermerchant::setup_messages();

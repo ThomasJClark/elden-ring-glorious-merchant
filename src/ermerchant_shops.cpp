@@ -358,8 +358,6 @@ static void open_regular_shop_detour(void *unk, long long begin_id, long long en
 
 void ermerchant::setup_shops()
 {
-    from::params::initialize();
-
     auto &weapon_lineups = mod_shops[0].lineups;
     auto &armor_lineups = mod_shops[1].lineups;
     auto &spell_lineups = mod_shops[2].lineups;
