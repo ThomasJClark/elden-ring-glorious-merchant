@@ -16,6 +16,7 @@
 #include "from/paramdef/EQUIP_PARAM_GOODS_ST.hpp"
 #include "from/paramdef/EQUIP_PARAM_PROTECTOR_ST.hpp"
 #include "from/paramdef/EQUIP_PARAM_WEAPON_ST.hpp"
+#include "from/paramdef/ITEMLOT_PARAM_ST.hpp"
 #include "from/paramdef/SHOP_LINEUP_PARAM.hpp"
 
 #include "ermerchant_messages.hpp"
@@ -25,6 +26,8 @@
 #include "modutils.hpp"
 
 static const std::wstring cut_content_prefix = L"[ERROR]";
+
+static constexpr unsigned char lot_item_category_goods = 1;
 
 static constexpr unsigned char equip_type_weapon = 0;
 static constexpr unsigned char equip_type_protector = 1;
@@ -75,170 +78,6 @@ static constexpr unsigned char goods_type_self_buff_incantation = 18;
 
 static constexpr unsigned char goods_sort_group_tutorial = 20;
 static constexpr unsigned char goods_sort_group_gesture = 250;
-
-static const std::map<int, unsigned int> goods_event_flags = {
-    {100, 60220},   // Tarnished's Furled Finger
-    {101, 60240},   // Duelist's Furled Finger
-    {102, 60270},   // Bloody Finger
-    {103, 60310},   // Finger Severer
-    {104, 60280},   // White Cipher Ring
-    {105, 60290},   // Blue Cipher Ring
-    {106, 60210},   // Tarnished's Wizened Finger
-    {108, 60300},   // Taunter's Tongue
-    {109, 60230},   // Small Golden Effigy
-    {110, 60250},   // Small Red Effigy
-    {130, 60100},   // Spectral Steed Whistle
-    {170, 60220},   // Tarnished's Furled Finger
-    {171, 60240},   // Duelist's Furled Finger
-    {172, 60270},   // Bloody Finger
-    {174, 60280},   // White Cipher Ring
-    {175, 60290},   // Blue Cipher Ring
-    {178, 60300},   // Taunter's Tongue
-    {179, 60230},   // Small Golden Effigy
-    {180, 60250},   // Small Red Effigy
-    {181, 60100},   // Spectral Steed Whistle
-    {191, 171},     // Godrick's Great Rune
-    {192, 172},     // Radahn's Great Rune
-    {193, 173},     // Morgott's Great Rune
-    {194, 174},     // Rykard's Great Rune
-    {195, 175},     // Mohg's Great Rune
-    {196, 176},     // Malenia's Great Rune
-    {250, 60020},   // Flask of Wondrous Physick
-    {251, 60020},   // Flask of Wondrous Physick
-    {10080, 197},   // Great Rune of the Unborn
-    {11000, 65000}, // Crimsonspill Crystal Tear
-    {11001, 65010}, // Greenspill Crystal Tear
-    {11002, 65020}, // Crimson Crystal Tear
-    {11003, 65030}, // Crimson Crystal Tear
-    {11004, 65040}, // Cerulean Crystal Tear
-    {11005, 65050}, // Cerulean Crystal Tear
-    {11006, 65060}, // Speckled Hardtear
-    {11007, 65070}, // Crimson Bubbletear
-    {11008, 65080}, // Opaline Bubbletear
-    {11009, 65090}, // Crimsonburst Crystal Tear
-    {11010, 65100}, // Greenburst Crystal Tear
-    {11011, 65110}, // Opaline Hardtear
-    {11012, 65120}, // Winged Crystal Tear
-    {11013, 65130}, // Thorny Cracked Tear
-    {11014, 65140}, // Spiked Cracked Tear
-    {11015, 65150}, // Windy Crystal Tear
-    {11016, 65160}, // Ruptured Crystal Tear
-    {11017, 65170}, // Ruptured Crystal Tear
-    {11018, 65180}, // Leaden Hardtear
-    {11019, 65190}, // Twiggy Cracked Tear
-    {11020, 65200}, // Crimsonwhorl Bubbletear
-    {11021, 65210}, // Strength-knot Crystal Tear
-    {11022, 65220}, // Dexterity-knot Crystal Tear
-    {11023, 65230}, // Intelligence-knot Crystal Tear
-    {11024, 65240}, // Faith-knot Crystal Tear
-    {11025, 65250}, // Cerulean Hidden Tear
-    {11026, 65260}, // Stonebarb Cracked Tear
-    {11027, 65270}, // Purifying Crystal Tear
-    {11028, 65280}, // Flame-Shrouding Cracked Tear
-    {11029, 65290}, // Magic-Shrouding Cracked Tear
-    {11030, 65300}, // Lightning-Shrouding Cracked Tear
-    {11031, 65310}, // Holy-Shrouding Cracked Tear
-    {8148, 171},    // Godrick's Great Rune-
-    {8149, 172},    // Radahn's Great Rune
-    {8150, 173},    // Morgott's Great Rune
-    {8151, 174},    // Rykard's Great Rune
-    {8152, 175},    // Mohg's Great Rune
-    {8153, 176},    // Malenia's Great Rune
-    {8158, 60110},  // Spirit Calling Bell
-    {8163, 60140},  // Tailoring Tools
-    {8182, 9500},   // Mending Rune of Perfect Order
-    {8183, 9502},   // Mending Rune of the Death-Prince
-    {8184, 9504},   // Mending Rune of the Fell Curse
-    {8188, 60150},  // Golden Tailoring Tools
-    {8500, 60120},  // Crafting Kit
-    {8590, 60130},  // Whetstone Knife
-    {8600, 62010},  // Map: Limgrave, West
-    {8601, 62011},  // Map: Weeping Peninsula
-    {8602, 62012},  // Map: Limgrave, East
-    {8603, 62020},  // Map: Liurnia, East
-    {8604, 62021},  // Map: Liurnia, North
-    {8605, 62022},  // Map: Liurnia, West
-    {8606, 62030},  // Map: Altus Plateau
-    {8607, 62031},  // Map: Leyndell, Royal Capital
-    {8608, 62032},  // Map: Mt. Gelmir
-    {8609, 62040},  // Map: Caelid
-    {8610, 62041},  // Map: Dragonbarrow
-    {8611, 62050},  // Map: Mountaintops of the Giants, West
-    {8612, 62051},  // Map: Mountaintops of the Giants, East
-    {8613, 62060},  // Map: Ainsel River
-    {8614, 62061},  // Map: Lake of Rot
-    {8615, 62063},  // Map: Siofra River
-    {8616, 62062},  // Map: Mohgwyn Palace
-    {8617, 62064},  // Map: Deeproot Depths
-    {8618, 62052},  // Map: Consecrated Snowfield
-    {8970, 65610},  // Iron Whetblade
-    {8971, 65640},  // Red-Hot Whetblade
-    {8972, 65660},  // Sanctified Whetblade
-    {8973, 65680},  // Glintstone Whetblade
-    {8974, 65720},  // Black Whetblade
-    {9300, 67000},  // Nomadic Warrior's Cookbook [1]
-    {9301, 67010},  // Nomadic Warrior's Cookbook [3]
-    {9302, 67020},  // Nomadic Warrior's Cookbook [6]
-    {9303, 67030},  // Nomadic Warrior's Cookbook [10]
-    {9305, 67050},  // Nomadic Warrior's Cookbook [7]
-    {9306, 67060},  // Nomadic Warrior's Cookbook [12]
-    {9307, 67070},  // Nomadic Warrior's Cookbook [19]
-    {9308, 67080},  // Nomadic Warrior's Cookbook [13]
-    {9309, 67090},  // Nomadic Warrior's Cookbook [23]
-    {9310, 67100},  // Nomadic Warrior's Cookbook [17]
-    {9311, 67110},  // Nomadic Warrior's Cookbook [2]
-    {9312, 67120},  // Nomadic Warrior's Cookbook [21]
-    {9313, 67130},  // Missionary's Cookbook [6]
-    {9320, 67200},  // Armorer's Cookbook [1]
-    {9321, 67210},  // Armorer's Cookbook [2]
-    {9322, 67220},  // Nomadic Warrior's Cookbook [11]
-    {9323, 67230},  // Nomadic Warrior's Cookbook [20]
-    {9325, 67250},  // Armorer's Cookbook [7]
-    {9326, 67260},  // Armorer's Cookbook [4]
-    {9327, 67270},  // Nomadic Warrior's Cookbook [18]
-    {9328, 67280},  // Armorer's Cookbook [3]
-    {9329, 67290},  // Nomadic Warrior's Cookbook [16]
-    {9330, 67300},  // Armorer's Cookbook [6]
-    {9331, 67310},  // Armorer's Cookbook [5]
-    {9340, 67400},  // Glintstone Craftsman's Cookbook [4]
-    {9341, 67410},  // Glintstone Craftsman's Cookbook [1]
-    {9342, 67420},  // Glintstone Craftsman's Cookbook [5]
-    {9343, 67430},  // Nomadic Warrior's Cookbook [9]
-    {9344, 67440},  // Glintstone Craftsman's Cookbook [8]
-    {9345, 67450},  // Glintstone Craftsman's Cookbook [2]
-    {9346, 67460},  // Glintstone Craftsman's Cookbook [6]
-    {9347, 67470},  // Glintstone Craftsman's Cookbook [7]
-    {9348, 67480},  // Glintstone Craftsman's Cookbook [3]
-    {9360, 67600},  // Missionary's Cookbook [2]
-    {9361, 67610},  // Missionary's Cookbook [1]
-    {9363, 67630},  // Missionary's Cookbook [5]
-    {9364, 67640},  // Missionary's Cookbook [4]
-    {9365, 67650},  // Missionary's Cookbook [3]
-    {9380, 67800},  // Nomadic Warrior's Cookbook [4]
-    {9383, 67830},  // Nomadic Warrior's Cookbook [5]
-    {9384, 67840},  // Perfumer's Cookbook [1]
-    {9385, 67850},  // Perfumer's Cookbook [2]
-    {9386, 67860},  // Perfumer's Cookbook [3]
-    {9387, 67870},  // Nomadic Warrior's Cookbook [14]
-    {9388, 67880},  // Nomadic Warrior's Cookbook [8]
-    {9389, 67890},  // Nomadic Warrior's Cookbook [22]
-    {9390, 67900},  // Nomadic Warrior's Cookbook [15]
-    {9391, 67910},  // Nomadic Warrior's Cookbook [24]
-    {9392, 67920},  // Perfumer's Cookbook [4]
-    {9400, 68000},  // Ancient Dragon Apostle's Cookbook [1]
-    {9401, 68010},  // Ancient Dragon Apostle's Cookbook [2]
-    {9402, 68020},  // Ancient Dragon Apostle's Cookbook [4]
-    {9403, 68030},  // Ancient Dragon Apostle's Cookbook [3]
-    {9420, 68200},  // Fevor's Cookbook [1]
-    {9421, 68210},  // Fevor's Cookbook [3]
-    {9422, 68220},  // Fevor's Cookbook [2]
-    {9423, 68230},  // Missionary's Cookbook [7]
-    {9440, 68400},  // Frenzied's Cookbook [1]
-    {9441, 68410},  // Frenzied's Cookbook [2]
-    {9500, 66000},  // Cracked Pot
-    {9501, 66400},  // Ritual Pot
-    {9510, 66700},  // Perfume Bottle
-};
 
 static from::CS::GameDataMan **game_data_man_addr;
 
@@ -380,6 +219,28 @@ void ermerchant::setup_shops()
     auto &dlc_consumable_lineups = mod_shops[19].lineups;
     auto &dlc_material_lineups = mod_shops[20].lineups;
     auto &dlc_miscellaneous_item_lineups = mod_shops[21].lineups;
+
+    // Look up event flags set when acquiring items like maps and cookbooks. Simply possessing
+    // these items doesn't actually unlock anything, an event flag must also be set.
+    std::map<int, unsigned int> auto_goods_flags;
+    for (auto param : {L"ItemLotParam_map", L"ItemLotParam_enemy"})
+    {
+        for (auto [id, row] : from::params::get_param<from::paramdef::ITEMLOT_PARAM_ST>(param))
+        {
+            if (row.lotItemCategory01 == lot_item_category_goods && row.getItemFlagId > 0)
+            {
+                auto_goods_flags[row.lotItemId01] = row.getItemFlagId;
+            }
+        }
+    }
+    for (auto [id, row] :
+         from::params::get_param<from::paramdef::SHOP_LINEUP_PARAM>(L"ShopLineupParam"))
+    {
+        if (row.equipType == equip_type_goods)
+        {
+            auto_goods_flags[row.equipId] = row.eventFlag_forStock;
+        }
+    }
 
     // Iterate through every obtainable item in the game and create shop lineups in the appropriate
     // ranges
@@ -580,8 +441,6 @@ void ermerchant::setup_shops()
 
         row.sellValue = 0;
 
-        auto event_flag_it = goods_event_flags.find(id);
-
         std::vector<from::paramdef::SHOP_LINEUP_PARAM> *lineups = nullptr;
 
         if (goods_name.starts_with(cut_content_prefix) || !row.iconId)
@@ -650,10 +509,11 @@ void ermerchant::setup_shops()
 
         if (lineups)
         {
+            auto event_flag_it = auto_goods_flags.find(id);
             lineups->push_back({
                 .equipId = (int)id,
                 .eventFlag_forStock =
-                    event_flag_it == goods_event_flags.end() ? 0 : event_flag_it->second,
+                    event_flag_it == auto_goods_flags.end() ? 0 : event_flag_it->second,
                 .equipType = equip_type_goods,
             });
         }
