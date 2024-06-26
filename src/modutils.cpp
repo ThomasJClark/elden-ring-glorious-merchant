@@ -1,10 +1,16 @@
+#include <codecvt>
+#include <filesystem>
+#include <locale>
 #include <span>
 #include <stdexcept>
+#include <string>
 
 #include <MinHook.h>
 #include <Pattern16.h>
+#include <spdlog/spdlog.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <winver.h>
 
 #include "modutils.hpp"
 
@@ -12,12 +18,34 @@ using namespace std;
 
 static span<unsigned char> memory;
 
+static string sus_filenames[] = {
+    "ALI213.ini",      "ColdAPI.ini",   "ColdClientLoader.ini",  "CPY.ini",
+    "ds.ini",          "hlm.ini",       "local_save.txt",        "SmartSteamEmu.ini",
+    "steam_api.ini",   "steam_emu.ini", "steam_interfaces.ini",  "steam_settings",
+    "SteamConfig.ini", "valve.ini",     "Language Selector.exe",
+};
+
 void modutils::initialize()
 {
     HMODULE module_handle = GetModuleHandleA("eldenring.exe");
     if (!module_handle)
     {
         throw runtime_error("Failed to get handle for eldenring.exe process");
+    }
+
+    wstring_convert<codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
+
+    wchar_t exe_filename[MAX_PATH] = {0};
+    GetModuleFileNameW(module_handle, exe_filename, MAX_PATH);
+    spdlog::info("Found handle for eldenring.exe process: {}", convert.to_bytes(exe_filename));
+
+    auto exe_directory = filesystem::path(exe_filename).parent_path();
+    for (auto i = 0; i < size(sus_filenames); i++)
+    {
+        if (filesystem::exists(exe_directory / sus_filenames[i]))
+        {
+            spdlog::error("Game may be modified, compatibility is unlikely [{}]", i);
+        }
     }
 
     MEMORY_BASIC_INFORMATION memory_info;
