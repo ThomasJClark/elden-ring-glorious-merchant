@@ -186,10 +186,8 @@ static void open_regular_shop_detour(void *unk, long long begin_id, long long en
             auto game_data_man = *game_data_man_addr;
             if (game_data_man != nullptr)
             {
-                for (auto &sort : game_data_man->menu_system_save_load->sorts)
-                {
-                    sort = from::menu_sort::item_type_ascending;
-                }
+                game_data_man->menu_system_save_load->sorts[from::sort_index_all_items] =
+                    from::menu_sort::item_type_ascending;
             }
         }
     }
