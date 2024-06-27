@@ -29,6 +29,8 @@ static const std::wstring cut_content_prefix = L"[ERROR]";
 
 static constexpr unsigned char lot_item_category_goods = 1;
 
+static constexpr unsigned char cost_type_lost_ashes_of_war = 4;
+
 static constexpr unsigned char equip_type_weapon = 0;
 static constexpr unsigned char equip_type_protector = 1;
 static constexpr unsigned char equip_type_accessory = 2;
@@ -220,23 +222,31 @@ void ermerchant::setup_shops()
 
     // Look up event flags set when acquiring items like maps and cookbooks. Simply possessing
     // these items doesn't actually unlock anything, an event flag must also be set.
-    std::map<int, unsigned int> auto_goods_flags;
+    std::map<int, unsigned int> goods_flags;
+    std::map<int, unsigned int> gems_flags;
     for (auto param : {L"ItemLotParam_map", L"ItemLotParam_enemy"})
     {
         for (auto [id, row] : from::params::get_param<from::paramdef::ITEMLOT_PARAM_ST>(param))
         {
+            // Record flags set when looting goods
             if (row.lotItemCategory01 == lot_item_category_goods && row.getItemFlagId > 0)
             {
-                auto_goods_flags[row.lotItemId01] = row.getItemFlagId;
+                goods_flags[row.lotItemId01] = row.getItemFlagId;
             }
         }
     }
     for (auto [id, row] :
          from::params::get_param<from::paramdef::SHOP_LINEUP_PARAM>(L"ShopLineupParam"))
     {
+        // Record flags set when purchasing goods
         if (row.equipType == equip_type_goods)
         {
-            auto_goods_flags[row.equipId] = row.eventFlag_forStock;
+            goods_flags[row.equipId] = row.eventFlag_forStock;
+        }
+        // Record flags required for Hewg to duplicate AoWs
+        else if (row.equipType == equip_type_gem && row.costType == cost_type_lost_ashes_of_war)
+        {
+            gems_flags[row.equipId] = row.eventFlag_forRelease;
         }
     }
 
@@ -507,11 +517,11 @@ void ermerchant::setup_shops()
 
         if (lineups)
         {
-            auto event_flag_it = auto_goods_flags.find(id);
+            auto event_flag_it = goods_flags.find(id);
             lineups->push_back({
                 .equipId = (int)id,
                 .eventFlag_forStock =
-                    event_flag_it == auto_goods_flags.end() ? 0 : event_flag_it->second,
+                    event_flag_it == goods_flags.end() ? 0 : event_flag_it->second,
                 .equipType = equip_type_goods,
             });
         }
@@ -546,7 +556,12 @@ void ermerchant::setup_shops()
             lineups = &ash_of_war_lineups;
         }
 
-        lineups->push_back({.equipId = (int)id, .equipType = equip_type_gem});
+        auto event_flag_it = gems_flags.find(id);
+        lineups->push_back({
+            .equipId = (int)id,
+            .eventFlag_forStock = event_flag_it == gems_flags.end() ? 0 : event_flag_it->second,
+            .equipType = equip_type_gem,
+        });
     }
 
     // Hook SoloParamRepositoryImp::LookupShopMenu to return the new shops added by the mod
