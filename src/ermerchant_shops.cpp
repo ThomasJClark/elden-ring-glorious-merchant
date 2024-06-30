@@ -82,6 +82,10 @@ static constexpr unsigned char goods_type_self_buff_incantation = 18;
 static constexpr unsigned char goods_sort_group_tutorial = 20;
 static constexpr unsigned char goods_sort_group_gesture = 250;
 
+static constexpr unsigned int kale_alive_flag_id = 4700;
+static constexpr unsigned int kale_hostile_flag_id = 4701;
+static constexpr unsigned int kale_dead_flag_id = 4703;
+
 static from::CS::GameDataMan **game_data_man_addr;
 
 struct shop
@@ -221,6 +225,28 @@ static void open_regular_shop_detour(void *unk, long long begin_id, long long en
     {
         (*game_data_man_addr)->menu_system_save_load->sorts[from::sort_index_all_items] =
             from::menu_sort::item_type_ascending;
+    }
+}
+
+static unsigned int (*get_event_flag)(void *, unsigned int);
+
+/**
+ * Hook for CS::CSFD4VirtualMemoryFlag::GetEventFlag()
+ *
+ * Make Kalé always alive and non-hostile
+ */
+static unsigned int get_event_flag_detour(void *self, unsigned int flag_id)
+{
+    switch (flag_id)
+    {
+    case kale_alive_flag_id:
+        return 1;
+    case kale_hostile_flag_id:
+        return 0;
+    case kale_dead_flag_id:
+        return 0;
+    default:
+        return get_event_flag(self, flag_id);
     }
 }
 
@@ -644,6 +670,19 @@ void ermerchant::setup_shops()
             .offset = -6,
         },
         open_regular_shop_detour, open_regular_shop);
+
+    // Hook CS::CSFD4VirtualMemoryFlag::GetEventFlag() to make Kalé always alive, so the shop is
+    // accessible to players who murdered him.
+    modutils::hook(
+        {
+            .aob = "41 f7 f0"    // div r8d
+                   "4c 8b d1"    // mov r10, EventFlagMan
+                   "45 33 c9"    // xor r9d, r9d
+                   "44 0f af c0" // imul r8d, eax
+                   "45 2b d8",   // sub r11d, r8d
+            .offset = -12,
+        },
+        get_event_flag_detour, get_event_flag);
 
     game_data_man_addr = modutils::scan<from::CS::GameDataMan *>({
         .aob = "48 8B 05 ?? ?? ?? ??" // mov rax, [GameDataMan]
