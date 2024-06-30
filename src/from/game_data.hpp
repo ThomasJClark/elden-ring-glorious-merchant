@@ -14,6 +14,16 @@ size_t sort_index_all_items = 12;
 namespace CS
 {
 
+class PlayerGameData
+{
+  public:
+    virtual ~PlayerGameData() = default;
+
+    unsigned char unk[0xda];
+
+    unsigned char max_reinforce_level;
+};
+
 class CSMenuSystemSaveLoad
 {
   public:
@@ -27,11 +37,10 @@ class CSMenuSystemSaveLoad
 class GameDataMan
 {
   public:
-    virtual ~GameDataMan() = default;
-
-    unsigned char unk[0x58];
-
-    CSMenuSystemSaveLoad *menu_system_save_load;
+    unsigned char unk1[0x8];
+    CS::PlayerGameData *player_game_data;
+    unsigned char unk2[0x50];
+    CS::CSMenuSystemSaveLoad *menu_system_save_load;
 };
 
 }

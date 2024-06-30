@@ -17,6 +17,7 @@
 #include "from/paramdef/EQUIP_PARAM_PROTECTOR_ST.hpp"
 #include "from/paramdef/EQUIP_PARAM_WEAPON_ST.hpp"
 #include "from/paramdef/ITEMLOT_PARAM_ST.hpp"
+#include "from/paramdef/REINFORCE_PARAM_WEAPON_ST.hpp"
 #include "from/paramdef/SHOP_LINEUP_PARAM.hpp"
 
 #include "ermerchant_messages.hpp"
@@ -114,6 +115,22 @@ static std::array<shop, 22> mod_shops = {
     shop{.id = ermerchant::shops::dlc_miscellaneous_items},
 };
 
+// Map of ReinforceParamWeapon IDs to the maximum possible level of weapons using that upgrade path
+static std::map<short, unsigned char> max_level_by_reinforce_type_id;
+
+static shop *get_mod_shop(int shop_lineup_id)
+{
+    for (auto &shop : mod_shops)
+    {
+        if (shop_lineup_id >= shop.id && shop_lineup_id < shop.id + ermerchant::shop_capacity)
+        {
+            return &shop;
+        }
+    }
+
+    return nullptr;
+}
+
 static from::find_shop_menu_result *(*solo_param_repository_lookup_shop_menu)(
     from::find_shop_menu_result *result, unsigned char shop_type, int begin_id, int end_id);
 
@@ -151,20 +168,13 @@ static void (*solo_param_repository_lookup_shop_lineup)(from::find_shop_menu_res
 static void solo_param_repository_lookup_shop_lineup_detour(from::find_shop_menu_result *result,
                                                             unsigned char shop_type, int id)
 {
-    for (auto &shop : mod_shops)
+    auto shop = get_mod_shop(id);
+    if (shop && id < shop->id + shop->lineups.size())
     {
-        if (id >= shop.id && id < shop.id + ermerchant::shop_capacity)
-        {
-            if (id >= shop.id + shop.lineups.size())
-            {
-                break;
-            }
-
-            result->shop_type = shop_type;
-            result->id = id;
-            result->row = &shop.lineups[id - shop.id];
-            return;
-        }
+        result->shop_type = shop_type;
+        result->id = id;
+        result->row = &shop->lineups[id - shop->id];
+        return;
     }
 
     solo_param_repository_lookup_shop_lineup(result, shop_type, id);
@@ -174,24 +184,43 @@ static void (*open_regular_shop)(void *, long long, long long);
 
 /**
  * Hook for OpenRegularShop()
- *
- * Change the default sort order when opening one of the shops added by this mod.
  */
 static void open_regular_shop_detour(void *unk, long long begin_id, long long end_id)
 {
-    open_regular_shop(unk, begin_id, end_id);
+    auto shop = get_mod_shop(begin_id);
 
-    for (auto &shop : mod_shops)
+    // Change the upgrade level when purchasing weapons to the player's current max
+    if (shop &&
+        (shop->id == ermerchant::shops::weapons || shop->id == ermerchant::shops::dlc_weapons))
     {
-        if (begin_id == shop.id)
+        auto max_reinforce_level = (*game_data_man_addr)->player_game_data->max_reinforce_level;
+
+        auto equip_param_weapon =
+            from::params::get_param<from::paramdef::EQUIP_PARAM_WEAPON_ST>(L"EquipParamWeapon");
+
+        for (auto &lineup : shop->lineups)
         {
-            auto game_data_man = *game_data_man_addr;
-            if (game_data_man != nullptr)
+            if (lineup.equipType == equip_type_weapon)
             {
-                game_data_man->menu_system_save_load->sorts[from::sort_index_all_items] =
-                    from::menu_sort::item_type_ascending;
+                auto weapon_id = lineup.equipId - lineup.equipId % 100;
+                auto weapon = equip_param_weapon[weapon_id];
+
+                auto reinforce_level =
+                    (int)std::floor((max_reinforce_level + 0.5) *
+                                    max_level_by_reinforce_type_id[weapon.reinforceTypeId] / 25);
+
+                lineup.equipId = weapon_id + reinforce_level;
             }
         }
+    }
+
+    open_regular_shop(unk, begin_id, end_id);
+
+    // Change the default sort order when opening one of the shops added by this mod.
+    if (shop)
+    {
+        (*game_data_man_addr)->menu_system_save_load->sorts[from::sort_index_all_items] =
+            from::menu_sort::item_type_ascending;
     }
 }
 
@@ -562,6 +591,13 @@ void ermerchant::setup_shops()
             .eventFlag_forStock = event_flag_it == gems_flags.end() ? 0 : event_flag_it->second,
             .equipType = equip_type_gem,
         });
+    }
+
+    for (auto [id, row] : from::params::get_param<from::paramdef::REINFORCE_PARAM_WEAPON_ST>(
+             L"ReinforceParamWeapon"))
+    {
+        auto level = id % 50;
+        max_level_by_reinforce_type_id[id - level] = level;
     }
 
     // Hook SoloParamRepositoryImp::LookupShopMenu to return the new shops added by the mod
