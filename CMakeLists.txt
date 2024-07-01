@@ -21,6 +21,12 @@ FetchContent_Declare(pattern16
   CONFIGURE_COMMAND     ""
   BUILD_COMMAND         "")
 
+FetchContent_Declare(mini
+  GIT_REPOSITORY        https://github.com/metayeti/mINI.git
+  GIT_TAG               0.9.15
+  CONFIGURE_COMMAND     ""
+  BUILD_COMMAND         "")
+
 set(SPDLOG_DISABLE_DEFAULT_LOGGER ON)
 set(SPDLOG_USE_STD_FORMAT ON)
 FetchContent_Declare(spdlog
@@ -30,10 +36,13 @@ FetchContent_Declare(spdlog
 # # Set iterator debug level to 0 for ELDEN RING ABI compatibility
 add_definitions(-D_ITERATOR_DEBUG_LEVEL=0)
 
-FetchContent_MakeAvailable(minhook pattern16 spdlog )
+FetchContent_MakeAvailable(minhook pattern16 mini spdlog)
 
 add_library(pattern16 INTERFACE)
 target_include_directories(pattern16 INTERFACE ${pattern16_SOURCE_DIR}/include)
+
+add_library(mini INTERFACE)
+target_include_directories(mini INTERFACE ${mini_SOURCE_DIR}/src)
 
 add_library(steamapi STATIC IMPORTED GLOBAL)
 set_property(TARGET steamapi APPEND PROPERTY IMPORTED_CONFIGURATIONS DEBUG)
@@ -51,6 +60,8 @@ add_library(EldenRingMerchantMod SHARED
   src/from/params.cpp
   src/modutils.hpp
   src/modutils.cpp
+  src/ermerchant_config.hpp
+  src/ermerchant_config.cpp
   src/ermerchant_talkscript.hpp
   src/ermerchant_talkscript.cpp
   src/ermerchant_talkscript_utils.hpp
@@ -66,11 +77,14 @@ set_target_properties(EldenRingMerchantMod PROPERTIES OUTPUT_NAME "ermerchant")
 add_definitions(-DPROJECT_VERSION="${CMAKE_PROJECT_VERSION}")
 
 add_custom_command(TARGET EldenRingMerchantMod POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:EldenRingMerchantMod> ${CMAKE_SOURCE_DIR}/LICENSE.txt
+  COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:EldenRingMerchantMod>
+  ${CMAKE_SOURCE_DIR}/LICENSE.txt
+  ${CMAKE_SOURCE_DIR}/ermerchant.ini
   COMMAND_EXPAND_LISTS)
 
 target_link_libraries(EldenRingMerchantMod
   minhook
   pattern16
+  mini
   spdlog
   ${CMAKE_SOURCE_DIR}/steam_api64.lib)

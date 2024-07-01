@@ -7,6 +7,7 @@
 #include <thread>
 #include <windows.h>
 
+#include "ermerchant_config.hpp"
 #include "ermerchant_messages.hpp"
 #include "ermerchant_shops.hpp"
 #include "ermerchant_talkscript.hpp"
@@ -15,10 +16,8 @@
 
 static std::thread mod_thread;
 
-static void setup_logger(const wchar_t *dll_filename)
+static void setup_logger(std::filesystem::path log_file)
 {
-    auto log_file = std::filesystem::path(dll_filename).parent_path() / "logs" / "ermerchant.log";
-
     auto logger = std::make_shared<spdlog::logger>("merchant");
     logger->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] %^[%l]%$ %v");
     logger->sinks().push_back(
@@ -65,11 +64,15 @@ bool WINAPI DllMain(HINSTANCE dll_instance, unsigned int fdw_reason, void *lpv_r
     {
         wchar_t dll_filename[MAX_PATH] = {0};
         GetModuleFileNameW(dll_instance, dll_filename, MAX_PATH);
-        setup_logger(dll_filename);
+        auto folder = std::filesystem::path(dll_filename).parent_path();
+
+        setup_logger(folder / "logs" / "ermerchant.log");
 
 #ifdef PROJECT_VERSION
         spdlog::info("Glorious Merchant version {}", PROJECT_VERSION);
 #endif
+
+        ermerchant::load_config(folder / "ermerchant.ini");
 
         mod_thread = std::thread([]() {
             try

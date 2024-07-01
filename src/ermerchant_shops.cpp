@@ -20,6 +20,7 @@
 #include "from/paramdef/REINFORCE_PARAM_WEAPON_ST.hpp"
 #include "from/paramdef/SHOP_LINEUP_PARAM.hpp"
 
+#include "ermerchant_config.hpp"
 #include "ermerchant_messages.hpp"
 #include "from/game_data.hpp"
 #include "from/param_lookup.hpp"
@@ -194,7 +195,7 @@ static void open_regular_shop_detour(void *unk, long long begin_id, long long en
     auto shop = get_mod_shop(begin_id);
 
     // Change the upgrade level when purchasing weapons to the player's current max
-    if (shop &&
+    if (ermerchant::config::auto_upgrade_weapons && shop &&
         (shop->id == ermerchant::shops::weapons || shop->id == ermerchant::shops::dlc_weapons))
     {
         auto max_reinforce_level = (*game_data_man_addr)->player_game_data->max_reinforce_level;
