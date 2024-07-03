@@ -422,7 +422,7 @@ UNLOCK_GESTURE_ARGS(gesture105, 105, 60847); // Inner Order
 UNLOCK_GESTURE_ARGS(gesture106, 106, 60848); // Golden Order Totality
 UNLOCK_GESTURE_ARGS(gesture108, 108, 60849); // The Ring
 
-std::array<from::EzState::event, 94> gestures_unlock_events = {
+std::array<from::EzState::event, 92> gestures_unlock_events = {
     UNLOCK_GESTURE_EVENTS(gesture0),   UNLOCK_GESTURE_EVENTS(gesture1),
     UNLOCK_GESTURE_EVENTS(gesture2),   UNLOCK_GESTURE_EVENTS(gesture3),
     UNLOCK_GESTURE_EVENTS(gesture4),   UNLOCK_GESTURE_EVENTS(gesture5),
@@ -446,7 +446,10 @@ std::array<from::EzState::event, 94> gestures_unlock_events = {
     UNLOCK_GESTURE_EVENTS(gesture101), UNLOCK_GESTURE_EVENTS(gesture102),
     UNLOCK_GESTURE_EVENTS(gesture103), UNLOCK_GESTURE_EVENTS(gesture104),
     UNLOCK_GESTURE_EVENTS(gesture105), UNLOCK_GESTURE_EVENTS(gesture106),
-    UNLOCK_GESTURE_EVENTS(gesture108)};
+    // TODO: Adding The Ring while owning it from pre-order causes the gesture acquired popup to
+    // appear on load for some reason.
+    // UNLOCK_GESTURE_EVENTS(gesture108),
+};
 from::EzState::transition gestures_unlock_return_transition(&gestures_state, else_evaluator);
 std::array<from::EzState::transition *, 1> gestures_unlock_return_transitions = {
     &gestures_unlock_return_transition,
@@ -551,16 +554,16 @@ from::EzState::state dlc_gestures_state = {
 // harmless.
 UNLOCK_GESTURE_ARGS_NO_EVENT(gesture111, 111); // May the Best Win
 UNLOCK_GESTURE_ARGS_NO_EVENT(gesture112, 112); // The Two Fingers
+UNLOCK_GESTURE_ARGS_NO_EVENT(gesture113, 113); // Ring of Miquella
 UNLOCK_GESTURE_ARGS_NO_EVENT(gesture114, 114); // Let Us Go Together
 UNLOCK_GESTURE_ARGS_NO_EVENT(gesture115, 115); // O Mother
-UNLOCK_GESTURE_ARGS_NO_EVENT(gesture116, 116); // Ring of Miquella
 
 std::array<from::EzState::event, 5> dlc_gestures_unlock_events = {
     from::EzState::event(from::talk_command::acquire_gesture, gesture111_unlock_args),
     from::EzState::event(from::talk_command::acquire_gesture, gesture112_unlock_args),
+    from::EzState::event(from::talk_command::acquire_gesture, gesture113_unlock_args),
     from::EzState::event(from::talk_command::acquire_gesture, gesture114_unlock_args),
-    from::EzState::event(from::talk_command::acquire_gesture, gesture115_unlock_args),
-    from::EzState::event(from::talk_command::acquire_gesture, gesture116_unlock_args)};
+    from::EzState::event(from::talk_command::acquire_gesture, gesture115_unlock_args)};
 from::EzState::transition dlc_gestures_unlock_return_transition(&dlc_gestures_state,
                                                                 else_evaluator);
 std::array<from::EzState::transition *, 1> dlc_gestures_unlock_return_transitions = {
