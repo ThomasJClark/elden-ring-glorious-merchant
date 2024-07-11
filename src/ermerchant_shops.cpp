@@ -62,6 +62,7 @@ static constexpr long long goods_flask_begin_id = 1000;
 static constexpr long long goods_flask_end_id = 1076;
 static constexpr long long goods_golden_seed_id = 10010;
 static constexpr long long goods_sacred_tear_id = 10020;
+static constexpr long long goods_empty_flask_of_wondrous_physick = 251;
 
 static constexpr unsigned char goods_type_normal_item = 0;
 static constexpr unsigned char goods_type_key_item = 1;
@@ -467,7 +468,8 @@ void ermerchant::setup_shops()
     {
         // Exclude goods which are obtained automatically in some way
         if (id == goods_memory_of_grace_id || id == goods_phantom_great_rune_id ||
-            (id >= goods_flask_begin_id && id < goods_flask_end_id))
+            (id >= goods_flask_begin_id && id < goods_flask_end_id) ||
+            id == goods_empty_flask_of_wondrous_physick)
         {
             continue;
         }
@@ -573,11 +575,19 @@ void ermerchant::setup_shops()
 
         if (lineups)
         {
-            auto event_flag_it = goods_flags.find(id);
+            auto event_flag = goods_flags[id];
+
+            // Don't allow buying a second copy of unique key items due to it technically being
+            // storable. This can cause issues, e.g. with the Crafting Kit flag getting unset when
+            // a second one is purchased.
+            if (event_flag && row.maxNum == 1 && row.maxRepositoryNum == 1)
+            {
+                row.maxRepositoryNum = 0;
+            }
+
             lineups->push_back({
                 .equipId = (int)id,
-                .eventFlag_forStock =
-                    event_flag_it == goods_flags.end() ? 0 : event_flag_it->second,
+                .eventFlag_forStock = event_flag,
                 .equipType = equip_type_goods,
             });
         }
