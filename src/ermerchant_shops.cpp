@@ -64,6 +64,12 @@ static constexpr long long goods_golden_seed_id = 10010;
 static constexpr long long goods_sacred_tear_id = 10020;
 static constexpr long long goods_empty_flask_of_wondrous_physick = 251;
 
+/* Additional goods that don't have the unauthorized "[ERROR]" prefix, but are unobtainable */
+static const std::set<long long> cut_content_goods = {
+    8860LL, // Erdtree Prayerbook
+    8861LL, // Erdtree Codex
+};
+
 static constexpr unsigned char goods_type_normal_item = 0;
 static constexpr unsigned char goods_type_key_item = 1;
 static constexpr unsigned char goods_type_crafting_material = 2;
@@ -281,6 +287,11 @@ void ermerchant::setup_shops()
     // these items doesn't actually unlock anything, an event flag must also be set.
     std::map<int, unsigned int> goods_flags;
     std::map<int, unsigned int> gems_flags;
+
+    // Look up goods IDs that are only used for replacement text in shops. These aren't actual
+    // obtainable items.
+    std::set<long long> dummy_goods_ids;
+
     for (auto param : {L"ItemLotParam_map", L"ItemLotParam_enemy"})
     {
         for (auto [id, row] : from::params::get_param<from::paramdef::ITEMLOT_PARAM_ST>(param))
@@ -304,6 +315,21 @@ void ermerchant::setup_shops()
         else if (row.equipType == equip_type_gem && row.costType == cost_type_lost_ashes_of_war)
         {
             gems_flags[row.equipId] = row.eventFlag_forRelease;
+        }
+        // Record goods IDs that are used for replacement text in shops
+        if (row.nameMsgId != -1)
+        {
+            dummy_goods_ids.insert(row.nameMsgId);
+            spdlog::info("dummy goods {}", row.nameMsgId);
+        }
+    }
+
+    for (auto [id, row] :
+         from::params::get_param<from::paramdef::EQUIP_PARAM_GOODS_ST>(L"EquipParamGoods"))
+    {
+        if (row.appearanceReplaceItemId != -1)
+        {
+            dummy_goods_ids.insert(row.appearanceReplaceItemId);
         }
     }
 
@@ -453,16 +479,6 @@ void ermerchant::setup_shops()
         lineups->push_back({.equipId = (int)id, .equipType = equip_type_accessory});
     }
 
-    auto replacement_goods_ids = std::set<long long>();
-    for (auto [id, row] :
-         from::params::get_param<from::paramdef::EQUIP_PARAM_GOODS_ST>(L"EquipParamGoods"))
-    {
-        if (row.appearanceReplaceItemId != -1)
-        {
-            replacement_goods_ids.insert(row.appearanceReplaceItemId);
-        }
-    }
-
     for (auto [id, row] :
          from::params::get_param<from::paramdef::EQUIP_PARAM_GOODS_ST>(L"EquipParamGoods"))
     {
@@ -486,8 +502,9 @@ void ermerchant::setup_shops()
             continue;
         }
 
-        // Exclude goods entries that are just used to replace the icon of another entry
-        if (replacement_goods_ids.contains(id))
+        // Exclude goods entries that are just used to replace the icon of another entry or a shop
+        // name or description
+        if (dummy_goods_ids.contains(id))
         {
             continue;
         }
@@ -509,7 +526,8 @@ void ermerchant::setup_shops()
 
         std::vector<from::paramdef::SHOP_LINEUP_PARAM> *lineups = nullptr;
 
-        if (goods_name.starts_with(cut_content_prefix) || !row.iconId)
+        if (goods_name.starts_with(cut_content_prefix) || !row.iconId ||
+            cut_content_goods.contains(id))
         {
             // Put cut items in a separate shop
             lineups = &cut_good_lineups;
