@@ -64,12 +64,6 @@ static constexpr long long goods_golden_seed_id = 10010;
 static constexpr long long goods_sacred_tear_id = 10020;
 static constexpr long long goods_empty_flask_of_wondrous_physick = 251;
 
-/* Additional goods that don't have the unauthorized "[ERROR]" prefix, but are unobtainable */
-static const std::set<long long> cut_content_goods = {
-    8860LL, // Erdtree Prayerbook
-    8861LL, // Erdtree Codex
-};
-
 static constexpr unsigned char goods_type_normal_item = 0;
 static constexpr unsigned char goods_type_key_item = 1;
 static constexpr unsigned char goods_type_crafting_material = 2;
@@ -89,6 +83,22 @@ static constexpr unsigned char goods_type_self_buff_incantation = 18;
 
 static constexpr unsigned char goods_sort_group_tutorial = 20;
 static constexpr unsigned char goods_sort_group_gesture = 250;
+
+/* Additional items that don't have the unauthorized "[ERROR]" prefix, but are unobtainable */
+static const std::set<long long> cut_content_goods = {
+    8860,    // Erdtree Prayerbook
+    8861,    // Erdtree Codex
+    2008023, // Keep Wall Key
+};
+
+static const std::set<long long> cut_content_protectors = {
+    610000, // Ragged Hat
+    610100, // Ragged Armor
+    610200, // Ragged Gloves
+    610300, // Ragged Loincloth
+    611000, // Ragged Hat (Altered)
+    611100, // Ragged Armor (Altered)
+};
 
 static constexpr unsigned int kale_alive_flag_id = 4700;
 static constexpr unsigned int kale_hostile_flag_id = 4701;
@@ -430,7 +440,7 @@ void ermerchant::setup_shops()
 
         std::vector<from::paramdef::SHOP_LINEUP_PARAM> *lineups = nullptr;
 
-        if (protector_name.starts_with(cut_content_prefix))
+        if (protector_name.starts_with(cut_content_prefix) || cut_content_protectors.contains(id))
         {
             lineups = &cut_armor_lineups;
         }
