@@ -554,14 +554,12 @@ from::EzState::state dlc_gestures_state = {
 // harmless.
 UNLOCK_GESTURE_ARGS_NO_EVENT(gesture111, 111); // May the Best Win
 UNLOCK_GESTURE_ARGS_NO_EVENT(gesture112, 112); // The Two Fingers
-UNLOCK_GESTURE_ARGS_NO_EVENT(gesture113, 113); // Ring of Miquella
 UNLOCK_GESTURE_ARGS_NO_EVENT(gesture114, 114); // Let Us Go Together
 UNLOCK_GESTURE_ARGS_NO_EVENT(gesture115, 115); // O Mother
 
-std::array<from::EzState::event, 5> dlc_gestures_unlock_events = {
+std::array<from::EzState::event, 4> dlc_gestures_unlock_events = {
     from::EzState::event(from::talk_command::acquire_gesture, gesture111_unlock_args),
     from::EzState::event(from::talk_command::acquire_gesture, gesture112_unlock_args),
-    from::EzState::event(from::talk_command::acquire_gesture, gesture113_unlock_args),
     from::EzState::event(from::talk_command::acquire_gesture, gesture114_unlock_args),
     from::EzState::event(from::talk_command::acquire_gesture, gesture115_unlock_args)};
 from::EzState::transition dlc_gestures_unlock_return_transition(&dlc_gestures_state,
