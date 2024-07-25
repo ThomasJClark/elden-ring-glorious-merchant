@@ -56,13 +56,8 @@ static constexpr long long protector_bare_chest_id = 10100;
 static constexpr long long protector_bare_arms_id = 10200;
 static constexpr long long protector_bare_legs_id = 10300;
 
-static constexpr long long goods_memory_of_grace_id = 115;
-static constexpr long long goods_phantom_great_rune_id = 135;
-static constexpr long long goods_flask_begin_id = 1000;
-static constexpr long long goods_flask_end_id = 1076;
 static constexpr long long goods_golden_seed_id = 10010;
 static constexpr long long goods_sacred_tear_id = 10020;
-static constexpr long long goods_empty_flask_of_wondrous_physick = 251;
 
 static constexpr unsigned char goods_type_normal_item = 0;
 static constexpr unsigned char goods_type_key_item = 1;
@@ -83,6 +78,24 @@ static constexpr unsigned char goods_type_self_buff_incantation = 18;
 
 static constexpr unsigned char goods_sort_group_tutorial = 20;
 static constexpr unsigned char goods_sort_group_gesture = 250;
+
+/*
+ * Items that are automatically given to the player in certain scenarios, and should not be
+ * purchasable
+ */
+static const std::set<long long> excluded_goods = {
+    107, // Phantom Bloody Finger
+    113, // Phantom Bloody Finger
+    114, // Phantom Recusant Finger
+    115, // Memory of Grace
+    135, // Phantom Great Rune
+    251, // Flask of Wondrous Physick (empty)
+    // Flask of Crimson Tears (+0 through +12, empty and full)
+    1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007, 1008, 1009, 1010, 1011, 1012, 1013, 1014, 1015,
+    1016, 1017, 1018, 1019, 1020, 1021, 1022, 1023, 1024, 1025,
+    // Flask of Cerulean Tears (+0 through +12, empty and full)
+    1050, 1051, 1052, 1053, 1054, 1055, 1056, 1057, 1058, 1059, 1060, 1061, 1062, 1063, 1064, 1065,
+    1066, 1067, 1068, 1069, 1070, 1071, 1072, 1073, 1074, 1075};
 
 /* Additional items that don't have the unauthorized "[ERROR]" prefix, but are unobtainable */
 static const std::set<long long> cut_content_goods = {
@@ -492,9 +505,7 @@ void ermerchant::setup_shops()
          from::params::get_param<from::paramdef::EQUIP_PARAM_GOODS_ST>(L"EquipParamGoods"))
     {
         // Exclude goods which are obtained automatically in some way
-        if (id == goods_memory_of_grace_id || id == goods_phantom_great_rune_id ||
-            (id >= goods_flask_begin_id && id < goods_flask_end_id) ||
-            id == goods_empty_flask_of_wondrous_physick)
+        if (excluded_goods.contains(id))
         {
             continue;
         }
