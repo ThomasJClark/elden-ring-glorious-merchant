@@ -309,29 +309,6 @@ void ermerchant::setup_shops()
     auto &dlc_material_lineups = mod_shops[20].lineups;
     auto &dlc_miscellaneous_item_lineups = mod_shops[21].lineups;
 
-    spdlog::info("weapon_lineups = {}", (void *)&weapon_lineups);
-    spdlog::info("armor_lineups = {}", (void *)&armor_lineups);
-    spdlog::info("spell_lineups = {}", (void *)&spell_lineups);
-    spdlog::info("talisman_lineups = {}", (void *)&talisman_lineups);
-    spdlog::info("ammunition_lineups = {}", (void *)&ammunition_lineups);
-    spdlog::info("ash_of_war_lineups = {}", (void *)&ash_of_war_lineups);
-    spdlog::info("spirit_summon_lineups = {}", (void *)&spirit_summon_lineups);
-    spdlog::info("consumable_lineups = {}", (void *)&consumable_lineups);
-    spdlog::info("material_lineups = {}", (void *)&material_lineups);
-    spdlog::info("miscellaneous_item_lineups = {}", (void *)&miscellaneous_item_lineups);
-    spdlog::info("cut_good_lineups = {}", (void *)&cut_good_lineups);
-    spdlog::info("cut_armor_lineups = {}", (void *)&cut_armor_lineups);
-    spdlog::info("dlc_weapon_lineups = {}", (void *)&dlc_weapon_lineups);
-    spdlog::info("dlc_armor_lineups = {}", (void *)&dlc_armor_lineups);
-    spdlog::info("dlc_spell_lineups = {}", (void *)&dlc_spell_lineups);
-    spdlog::info("dlc_talisman_lineups = {}", (void *)&dlc_talisman_lineups);
-    spdlog::info("dlc_ammunition_lineups = {}", (void *)&dlc_ammunition_lineups);
-    spdlog::info("dlc_ashes_of_war_lineups = {}", (void *)&dlc_ashes_of_war_lineups);
-    spdlog::info("dlc_spirit_summon_lineups = {}", (void *)&dlc_spirit_summon_lineups);
-    spdlog::info("dlc_consumable_lineups = {}", (void *)&dlc_consumable_lineups);
-    spdlog::info("dlc_material_lineups = {}", (void *)&dlc_material_lineups);
-    spdlog::info("dlc_miscellaneous_item_lineups = {}", (void *)&dlc_miscellaneous_item_lineups);
-
     // Look up event flags set when acquiring items like maps and cookbooks. Simply possessing
     // these items doesn't actually unlock anything, an event flag must also be set.
     std::map<int, unsigned int> goods_flags;
@@ -530,31 +507,21 @@ void ermerchant::setup_shops()
     for (auto [id, row] :
          from::params::get_param<from::paramdef::EQUIP_PARAM_GOODS_ST>(L"EquipParamGoods"))
     {
-        auto log = id == 2900 || id == 2901 || id == 2902 || id == 2903 || id == 2904 ||
-                   id == 2905 || id == 2906 || id == 2907 || id == 2908 || id == 2909 ||
-                   id == 2910 || id == 2911 || id == 2912;
-
         // Exclude goods which are obtained automatically in some way
         if (excluded_goods.contains(id))
         {
-            if (log)
-                spdlog::debug("Excluded, skipping {}", id);
             continue;
         }
 
         // Exclude gestures, which are technically goods but are unlocked in a different way
         if (row.goodsType == goods_type_normal_item && row.sortGroupId == goods_sort_group_gesture)
         {
-            if (log)
-                spdlog::debug("Gesture, skipping {}", id);
             continue;
         }
 
         // Exclude tutorials, which are also goods but aren't useful to buy
         if (row.goodsType == goods_type_info_item && row.sortGroupId == goods_sort_group_tutorial)
         {
-            if (log)
-                spdlog::debug("Tutorial, skipping {}", id);
             continue;
         }
 
@@ -562,8 +529,6 @@ void ermerchant::setup_shops()
         // name or description
         if (dummy_goods_ids.contains(id))
         {
-            if (log)
-                spdlog::debug("Replacement item, skipping {}", id);
             continue;
         }
 
@@ -577,8 +542,6 @@ void ermerchant::setup_shops()
 
         if (goods_name.empty() || goods_name == cut_content_prefix)
         {
-            if (log)
-                spdlog::debug("No name, skipping {}", id);
             continue;
         }
 
@@ -599,8 +562,6 @@ void ermerchant::setup_shops()
         }
         else
         {
-            if (log)
-                spdlog::debug("{} has goods type {}", id, (int)row.goodsType);
             switch (row.goodsType)
             {
             case goods_type_normal_item:
@@ -654,9 +615,6 @@ void ermerchant::setup_shops()
                 break;
             }
         }
-
-        if (log)
-            spdlog::debug("Adding {} to {}", id, (void *)lineups);
 
         if (lineups)
         {
