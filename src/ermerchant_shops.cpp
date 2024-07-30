@@ -530,31 +530,21 @@ void ermerchant::setup_shops()
     for (auto [id, row] :
          from::params::get_param<from::paramdef::EQUIP_PARAM_GOODS_ST>(L"EquipParamGoods"))
     {
-        auto log = id == 2900 || id == 2901 || id == 2902 || id == 2903 || id == 2904 ||
-                   id == 2905 || id == 2906 || id == 2907 || id == 2908 || id == 2909 ||
-                   id == 2910 || id == 2911 || id == 2912;
-
         // Exclude goods which are obtained automatically in some way
         if (excluded_goods.contains(id))
         {
-            if (log)
-                spdlog::debug("Excluded, skipping {}", id);
             continue;
         }
 
         // Exclude gestures, which are technically goods but are unlocked in a different way
         if (row.goodsType == goods_type_normal_item && row.sortGroupId == goods_sort_group_gesture)
         {
-            if (log)
-                spdlog::debug("Gesture, skipping {}", id);
             continue;
         }
 
         // Exclude tutorials, which are also goods but aren't useful to buy
         if (row.goodsType == goods_type_info_item && row.sortGroupId == goods_sort_group_tutorial)
         {
-            if (log)
-                spdlog::debug("Tutorial, skipping {}", id);
             continue;
         }
 
@@ -562,8 +552,6 @@ void ermerchant::setup_shops()
         // name or description
         if (dummy_goods_ids.contains(id))
         {
-            if (log)
-                spdlog::debug("Replacement item, skipping {}", id);
             continue;
         }
 
@@ -577,8 +565,6 @@ void ermerchant::setup_shops()
 
         if (goods_name.empty() || goods_name == cut_content_prefix)
         {
-            if (log)
-                spdlog::debug("No name, skipping {}", id);
             continue;
         }
 
@@ -599,8 +585,6 @@ void ermerchant::setup_shops()
         }
         else
         {
-            if (log)
-                spdlog::debug("{} has goods type {}", id, (int)row.goodsType);
             switch (row.goodsType)
             {
             case goods_type_normal_item:
@@ -654,9 +638,6 @@ void ermerchant::setup_shops()
                 break;
             }
         }
-
-        if (log)
-            spdlog::debug("Adding {} to {}", id, (void *)lineups);
 
         if (lineups)
         {
