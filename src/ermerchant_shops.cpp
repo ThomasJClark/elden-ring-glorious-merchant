@@ -619,6 +619,7 @@ void ermerchant::setup_shops()
         if (lineups)
         {
             auto event_flag = goods_flags[id];
+            short sell_quantity = -1;
 
             // Don't allow buying a second copy of unique key items due to it technically being
             // storable. This can cause issues, e.g. with the Crafting Kit flag getting unset when
@@ -626,11 +627,13 @@ void ermerchant::setup_shops()
             if (event_flag && row.maxNum == 1 && row.maxRepositoryNum == 1)
             {
                 row.maxRepositoryNum = 0;
+                sell_quantity = 1;
             }
 
             lineups->push_back({
                 .equipId = (int)id,
                 .eventFlag_forStock = event_flag,
+                .sellQuantity = sell_quantity,
                 .equipType = equip_type_goods,
             });
         }
