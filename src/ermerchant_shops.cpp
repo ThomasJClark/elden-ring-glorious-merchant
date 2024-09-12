@@ -358,6 +358,12 @@ void ermerchant::setup_shops()
         }
     }
 
+    // Count of the number of times each flag prefix is used, to help identify flags that are usable
+    // as stock counters.
+    std::map<unsigned int, int> goods_flag_counts;
+    for (auto [_, flag] : goods_flags)
+        goods_flag_counts[flag - flag % 10]++;
+
     // Iterate through every obtainable item in the game and create shop lineups in the appropriate
     // ranges
     for (auto [id, row] :
@@ -627,7 +633,14 @@ void ermerchant::setup_shops()
             if (event_flag && row.maxNum == 1 && row.maxRepositoryNum == 1)
             {
                 row.maxRepositoryNum = 0;
-                sell_quantity = 1;
+
+                // Additionally, limit the sold quantity of items if they have an event flag that
+                // can store stock counts. This is mainly for the flask of wondrous physic, which
+                // otherwise would be duplicatable by drinking it before opening the shop.
+                if (event_flag % 10 == 0 && goods_flag_counts[event_flag - event_flag % 10] == 1)
+                {
+                    sell_quantity = 1;
+                }
             }
 
             lineups->push_back({
