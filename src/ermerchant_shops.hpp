@@ -36,14 +36,6 @@ static constexpr long long dlc_miscellaneous_items = 9390000;
  */
 void setup_shops();
 
-/**
- * Patch existing params to set prices in the Glorious Merchant shop
- */
-void patch_shops();
+void set_shop_open(bool);
 
-/**
- * Unpatch existing params to set prices in the Glorious Merchant shop. This is necessary to make
- * selling itmes work, and to allow Seamless Co-op invasions
- */
-void unpatch_shops();
 }

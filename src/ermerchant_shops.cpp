@@ -156,20 +156,11 @@ static std::array<shop, 22> mod_shops = {
 // Map of ReinforceParamWeapon IDs to the maximum possible level of weapons using that upgrade path
 static std::map<short, unsigned char> max_level_by_reinforce_type_id;
 
-// Vanilla sell values of all items. These are set to 0 when the shop is opened, and restored when
-// it's closed so selling still works
-template <class T> using sell_values = std::vector<std::pair<T *, int>>;
-static sell_values<from::paramdef::EQUIP_PARAM_ACCESSORY_ST> accessory_sell_values;
-static sell_values<from::paramdef::EQUIP_PARAM_GEM_ST> gem_sell_values;
-static sell_values<from::paramdef::EQUIP_PARAM_GOODS_ST> goods_sell_values;
-static sell_values<from::paramdef::EQUIP_PARAM_PROTECTOR_ST> protector_sell_values;
-static sell_values<from::paramdef::EQUIP_PARAM_WEAPON_ST> weapon_sell_values;
+// Goods that shouldn't be allowed in the storage box, because acquiring a second copy can break
+// things
+static std::set<unsigned int> no_repository_item_ids;
 
-static bool is_params_patched = false;
-
-// Similar list for maxRepositoryNum
-static std::vector<std::pair<from::paramdef::EQUIP_PARAM_GOODS_ST *, short>>
-    goods_max_repository_nums;
+static bool is_shop_open = false;
 
 static shop *get_mod_shop(int shop_lineup_id)
 {
@@ -271,13 +262,49 @@ static void open_regular_shop_detour(void *unk, long long begin_id, long long en
 
     if (shop)
     {
+        ermerchant::set_shop_open(true);
+
         // Change the default sort order when opening one of the shops added by this mod.
         (*game_data_man_addr)->menu_system_save_load->sorts[from::sort_index_all_items] =
             from::menu_sort::item_type_ascending;
-
-        // Patch all the necessary shop params when opening one of the mod shops
-        ermerchant::patch_shops();
     }
+}
+
+static int (*get_sell_value)(unsigned int *);
+
+/**
+ * Hook for GetSellValue()
+ *
+ * Overrides the sell value for all items to 0 while the merchant shop is open. We don't directly
+ * touch the param fields because this would prevent items from being sold back to merchants, and
+ * because Seamless Co-op doesn't allow matchmaking with modified params.
+ */
+static int get_sell_value_detour(unsigned int *item_id)
+{
+    if (is_shop_open)
+    {
+        return 0;
+    }
+
+    return get_sell_value(item_id);
+}
+
+static unsigned long long (*get_max_repository_num)(unsigned int *);
+
+/**
+ * Hook for GetMaxRepositoryNum()
+ *
+ * Overrides certain items to prevent them from being placed in the storage box, because they
+ * should be limited to 1 total purchased to avoid breaking certain flags.
+ */
+static unsigned long long get_max_repository_num_detour(unsigned int *item_id)
+{
+    if (is_shop_open && no_repository_item_ids.contains(*item_id))
+    {
+        return 0;
+    }
+
+    return get_max_repository_num(item_id);
 }
 
 static unsigned int (*get_event_flag)(void *, unsigned int);
@@ -415,8 +442,6 @@ void ermerchant::setup_shops()
             continue;
         }
 
-        weapon_sell_values.emplace_back(&row, row.sellValue);
-
         std::vector<from::paramdef::SHOP_LINEUP_PARAM> *lineups = nullptr;
 
         if (row.wepType == weapon_type_arrow || row.wepType == weapon_type_greatarrow ||
@@ -476,8 +501,6 @@ void ermerchant::setup_shops()
             continue;
         }
 
-        protector_sell_values.emplace_back(&row, row.sellValue);
-
         std::vector<from::paramdef::SHOP_LINEUP_PARAM> *lineups = nullptr;
 
         if (protector_name.starts_with(cut_content_prefix) || cut_content_protectors.contains(id))
@@ -511,8 +534,6 @@ void ermerchant::setup_shops()
         {
             continue;
         }
-
-        accessory_sell_values.emplace_back(&row, row.sellValue);
 
         std::vector<from::paramdef::SHOP_LINEUP_PARAM> *lineups = nullptr;
 
@@ -568,8 +589,6 @@ void ermerchant::setup_shops()
         {
             continue;
         }
-
-        goods_sell_values.emplace_back(&row, row.sellValue);
 
         std::vector<from::paramdef::SHOP_LINEUP_PARAM> *lineups = nullptr;
 
@@ -645,12 +664,14 @@ void ermerchant::setup_shops()
             auto event_flag = goods_flags[id];
             short sell_quantity = -1;
 
-            // Don't allow buying a second copy of unique key items due to it technically being
-            // storable. This can cause issues, e.g. with the Crafting Kit flag getting unset when
-            // a second one is purchased.
+            // Check for maps, crafting kit, key items, etc. that shouldn't be allowed to have
+            // duplicates. Buying extra copies of key items can unset event flags and break things
+            // like unlocked map progress.
             if (event_flag && row.maxNum == 1 && row.maxRepositoryNum == 1)
             {
-                goods_max_repository_nums.emplace_back(&row, row.maxRepositoryNum);
+                // Don't allow these items to be stored in the item box, since this is basically
+                // a loophole for buying a second copy
+                no_repository_item_ids.insert(0x40000000 | id);
 
                 // Additionally, limit the sold quantity of items if they have an event flag that
                 // can store stock counts. This is mainly for the flask of wondrous physic, which
@@ -685,8 +706,6 @@ void ermerchant::setup_shops()
         {
             continue;
         }
-
-        gem_sell_values.emplace_back(&row, row.sellValue);
 
         std::vector<from::paramdef::SHOP_LINEUP_PARAM> *lineups = nullptr;
 
@@ -759,6 +778,26 @@ void ermerchant::setup_shops()
         },
         open_regular_shop_detour, open_regular_shop);
 
+    modutils::hook(
+        {
+            .aob = "83 cb ff"  // or  sellValue, -1
+                   "41 8b c0"  // mov eax, r8d
+                   "c1 e8 1c"  // shr eax, 28
+                   "48 8b f1"  // mov rsi, itemId
+                   "83 f8 0f", // cmp eax, 0xf
+            .offset = -29,
+        },
+        get_sell_value_detour, get_sell_value);
+
+    modutils::hook(
+        {
+            .aob = "48 8b 5c 24 70"  // mov rbx, qword ptr [rsp + local_res8]
+                   "b8 58 02 00 00"  // mov maxRepositoryNum, 600
+                   "48 8b 7c 24 78", // mov rdi, qword ptr [rsp + local_res10]
+            .offset = -521,
+        },
+        get_max_repository_num_detour, get_max_repository_num);
+
     // Hook CS::CSFD4VirtualMemoryFlag::GetEventFlag() to make Kalé always alive, so the shop is
     // accessible to players who murdered him.
     modutils::hook(
@@ -783,48 +822,7 @@ void ermerchant::setup_shops()
     });
 }
 
-void ermerchant::patch_shops()
+void ermerchant::set_shop_open(bool shop_open)
 {
-    if (!is_params_patched)
-    {
-        spdlog::info("Patching shops");
-
-        for (auto [row, _] : accessory_sell_values)
-            row->sellValue = 0;
-        for (auto [row, _] : gem_sell_values)
-            row->sellValue = 0;
-        for (auto [row, _] : protector_sell_values)
-            row->sellValue = 0;
-        for (auto [row, _] : weapon_sell_values)
-            row->sellValue = 0;
-        for (auto [row, _] : goods_sell_values)
-            row->sellValue = 0;
-        for (auto [row, _] : goods_max_repository_nums)
-            row->maxRepositoryNum = 0;
-
-        is_params_patched = true;
-    }
-}
-
-void ermerchant::unpatch_shops()
-{
-    if (is_params_patched)
-    {
-        spdlog::info("Unpatching shops");
-
-        for (auto [row, sell_value] : accessory_sell_values)
-            row->sellValue = sell_value;
-        for (auto [row, sell_value] : gem_sell_values)
-            row->sellValue = sell_value;
-        for (auto [row, sell_value] : protector_sell_values)
-            row->sellValue = sell_value;
-        for (auto [row, sell_value] : weapon_sell_values)
-            row->sellValue = sell_value;
-        for (auto [row, sell_value] : goods_sell_values)
-            row->sellValue = sell_value;
-        for (auto [row, max_repository_num] : goods_max_repository_nums)
-            row->maxRepositoryNum = max_repository_num;
-
-        is_params_patched = false;
-    }
+    is_shop_open = shop_open;
 }

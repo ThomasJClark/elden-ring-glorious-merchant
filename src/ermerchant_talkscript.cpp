@@ -127,9 +127,7 @@ static void ezstate_enter_state_detour(from::EzState::state *state,
         }
     }
 
-    // Ensure shot params aren't patched at the start of any state transition. Params are only
-    // patched while a shop menu is open.
-    ermerchant::unpatch_shops();
+    ermerchant::set_shop_open(false);
 
     ezstate_enter_state(state, machine, unk);
 }
