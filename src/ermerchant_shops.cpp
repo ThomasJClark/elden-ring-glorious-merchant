@@ -156,6 +156,21 @@ static std::array<shop, 22> mod_shops = {
 // Map of ReinforceParamWeapon IDs to the maximum possible level of weapons using that upgrade path
 static std::map<short, unsigned char> max_level_by_reinforce_type_id;
 
+// Vanilla sell values of all items. These are set to 0 when the shop is opened, and restored when
+// it's closed so selling still works
+template <class T> using sell_values = std::vector<std::pair<T *, int>>;
+static sell_values<from::paramdef::EQUIP_PARAM_ACCESSORY_ST> accessory_sell_values;
+static sell_values<from::paramdef::EQUIP_PARAM_GEM_ST> gem_sell_values;
+static sell_values<from::paramdef::EQUIP_PARAM_GOODS_ST> goods_sell_values;
+static sell_values<from::paramdef::EQUIP_PARAM_PROTECTOR_ST> protector_sell_values;
+static sell_values<from::paramdef::EQUIP_PARAM_WEAPON_ST> weapon_sell_values;
+
+static bool is_params_patched = false;
+
+// Similar list for maxRepositoryNum
+static std::vector<std::pair<from::paramdef::EQUIP_PARAM_GOODS_ST *, short>>
+    goods_max_repository_nums;
+
 static shop *get_mod_shop(int shop_lineup_id)
 {
     for (auto &shop : mod_shops)
@@ -254,11 +269,14 @@ static void open_regular_shop_detour(void *unk, long long begin_id, long long en
 
     open_regular_shop(unk, begin_id, end_id);
 
-    // Change the default sort order when opening one of the shops added by this mod.
     if (shop)
     {
+        // Change the default sort order when opening one of the shops added by this mod.
         (*game_data_man_addr)->menu_system_save_load->sorts[from::sort_index_all_items] =
             from::menu_sort::item_type_ascending;
+
+        // Patch all the necessary shop params when opening one of the mod shops
+        ermerchant::patch_shops();
     }
 }
 
@@ -397,7 +415,7 @@ void ermerchant::setup_shops()
             continue;
         }
 
-        row.sellValue = 0;
+        weapon_sell_values.emplace_back(&row, row.sellValue);
 
         std::vector<from::paramdef::SHOP_LINEUP_PARAM> *lineups = nullptr;
 
@@ -458,7 +476,7 @@ void ermerchant::setup_shops()
             continue;
         }
 
-        row.sellValue = 0;
+        protector_sell_values.emplace_back(&row, row.sellValue);
 
         std::vector<from::paramdef::SHOP_LINEUP_PARAM> *lineups = nullptr;
 
@@ -494,7 +512,7 @@ void ermerchant::setup_shops()
             continue;
         }
 
-        row.sellValue = 0;
+        accessory_sell_values.emplace_back(&row, row.sellValue);
 
         std::vector<from::paramdef::SHOP_LINEUP_PARAM> *lineups = nullptr;
 
@@ -551,7 +569,7 @@ void ermerchant::setup_shops()
             continue;
         }
 
-        row.sellValue = 0;
+        goods_sell_values.emplace_back(&row, row.sellValue);
 
         std::vector<from::paramdef::SHOP_LINEUP_PARAM> *lineups = nullptr;
 
@@ -632,7 +650,7 @@ void ermerchant::setup_shops()
             // a second one is purchased.
             if (event_flag && row.maxNum == 1 && row.maxRepositoryNum == 1)
             {
-                row.maxRepositoryNum = 0;
+                goods_max_repository_nums.emplace_back(&row, row.maxRepositoryNum);
 
                 // Additionally, limit the sold quantity of items if they have an event flag that
                 // can store stock counts. This is mainly for the flask of wondrous physic, which
@@ -668,7 +686,7 @@ void ermerchant::setup_shops()
             continue;
         }
 
-        row.sellValue = 0;
+        gem_sell_values.emplace_back(&row, row.sellValue);
 
         std::vector<from::paramdef::SHOP_LINEUP_PARAM> *lineups = nullptr;
 
@@ -763,4 +781,46 @@ void ermerchant::setup_shops()
                "C3",                  // ret
         .relative_offsets = {{3, 7}},
     });
+}
+
+void ermerchant::patch_shops()
+{
+    if (!is_params_patched)
+    {
+        spdlog::info("Patching shops");
+
+        for (auto [row, _] : accessory_sell_values)
+            row->sellValue = 0;
+        for (auto [row, _] : gem_sell_values)
+            row->sellValue = 0;
+        for (auto [row, _] : protector_sell_values)
+            row->sellValue = 0;
+        for (auto [row, _] : weapon_sell_values)
+            row->sellValue = 0;
+        for (auto [row, _] : goods_max_repository_nums)
+            row->maxRepositoryNum = 0;
+
+        is_params_patched = true;
+    }
+}
+
+void ermerchant::unpatch_shops()
+{
+    if (is_params_patched)
+    {
+        spdlog::info("Unpatching shops");
+
+        for (auto [row, sell_value] : accessory_sell_values)
+            row->sellValue = sell_value;
+        for (auto [row, sell_value] : gem_sell_values)
+            row->sellValue = sell_value;
+        for (auto [row, sell_value] : protector_sell_values)
+            row->sellValue = sell_value;
+        for (auto [row, sell_value] : weapon_sell_values)
+            row->sellValue = sell_value;
+        for (auto [row, max_repository_num] : goods_max_repository_nums)
+            row->maxRepositoryNum = max_repository_num;
+
+        is_params_patched = false;
+    }
 }

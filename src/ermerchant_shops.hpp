@@ -31,6 +31,19 @@ static constexpr long long dlc_materials = 9380000;
 static constexpr long long dlc_miscellaneous_items = 9390000;
 }
 
+/**
+ * Set up new params and hooks used by the Glorious Merchant shop
+ */
 void setup_shops();
 
+/**
+ * Patch existing params to set prices in the Glorious Merchant shop
+ */
+void patch_shops();
+
+/**
+ * Unpatch existing params to set prices in the Glorious Merchant shop. This is necessary to make
+ * selling itmes work, and to allow Seamless Co-op invasions
+ */
+void unpatch_shops();
 }
