@@ -797,6 +797,8 @@ void ermerchant::patch_shops()
             row->sellValue = 0;
         for (auto [row, _] : weapon_sell_values)
             row->sellValue = 0;
+        for (auto [row, _] : goods_sell_values)
+            row->sellValue = 0;
         for (auto [row, _] : goods_max_repository_nums)
             row->maxRepositoryNum = 0;
 
@@ -817,6 +819,8 @@ void ermerchant::unpatch_shops()
         for (auto [row, sell_value] : protector_sell_values)
             row->sellValue = sell_value;
         for (auto [row, sell_value] : weapon_sell_values)
+            row->sellValue = sell_value;
+        for (auto [row, sell_value] : goods_sell_values)
             row->sellValue = sell_value;
         for (auto [row, max_repository_num] : goods_max_repository_nums)
             row->maxRepositoryNum = max_repository_num;
