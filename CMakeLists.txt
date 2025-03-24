@@ -33,10 +33,17 @@ FetchContent_Declare(spdlog
   GIT_REPOSITORY        https://github.com/gabime/spdlog.git
   GIT_TAG               v1.13.0)
 
+set(SWSDK_VERSION "1.59")
+set(SWSDK_RELEASE "x64")
+FetchContent_Declare(steamworks-sdk
+  URL                   https://github.com/julianxhokaxhiu/SteamworksSDKCI/releases/download/${SWSDK_VERSION}/SteamworksSDK-v${SWSDK_VERSION}.0_${SWSDK_RELEASE}.zip
+  CONFIGURE_COMMAND     ""
+  BUILD_COMMAND         "")
+
 # # Set iterator debug level to 0 for ELDEN RING ABI compatibility
 add_definitions(-D_ITERATOR_DEBUG_LEVEL=0)
 
-FetchContent_MakeAvailable(minhook pattern16 mini spdlog)
+FetchContent_MakeAvailable(minhook pattern16 mini spdlog steamworks-sdk)
 
 add_library(pattern16 INTERFACE)
 target_include_directories(pattern16 INTERFACE ${pattern16_SOURCE_DIR}/include)
@@ -49,6 +56,13 @@ set_property(TARGET steamapi APPEND PROPERTY IMPORTED_CONFIGURATIONS DEBUG)
 set_target_properties(steamapi PROPERTIES
         IMPORTED_LINK_INTERFACE_LANGUAGES_DEBUG CXX
         IMPORTED_LOCATION_DEBUG steam_api64.lib)
+
+add_library(steamworks-sdk STATIC IMPORTED GLOBAL)
+target_include_directories(steamworks-sdk INTERFACE ${steamworks-sdk_SOURCE_DIR}/include)
+set_property(TARGET steamworks-sdk APPEND PROPERTY IMPORTED_CONFIGURATIONS DEBUG)
+set_target_properties(steamworks-sdk PROPERTIES
+        IMPORTED_LINK_INTERFACE_LANGUAGES_DEBUG CXX
+        IMPORTED_LOCATION_DEBUG ${steamworks-sdk_SOURCE_DIR}/lib/steam/steam_api64.lib)
 
 add_library(EldenRingMerchantMod SHARED
   src/from/talk_commands.hpp
@@ -87,4 +101,4 @@ target_link_libraries(EldenRingMerchantMod
   pattern16
   mini
   spdlog
-  ${CMAKE_SOURCE_DIR}/steam_api64.lib)
+  steamworks-sdk)

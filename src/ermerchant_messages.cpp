@@ -6,6 +6,8 @@
  */
 #include "ermerchant_messages.hpp"
 
+#include <steam/isteamapps.h>
+
 #include <chrono>
 #include <map>
 #include <spdlog/spdlog.h>
@@ -14,23 +16,6 @@
 
 #include "from/messages.hpp"
 #include "modutils.hpp"
-
-struct ISteamApps;
-extern "C" __declspec(dllimport) ISteamApps *__cdecl SteamAPI_SteamApps_v008();
-extern "C" __declspec(dllimport) const
-    char *__cdecl SteamAPI_ISteamApps_GetCurrentGameLanguage(ISteamApps *);
-
-/**
- * Return the player's selected language using the Steamworks SDK
- *
- * https://partner.steamgames.com/doc/api/ISteamApps#GetCurrentGameLanguage
- */
-static std::string get_steam_language()
-{
-    auto steam_api = SteamAPI_SteamApps_v008();
-    auto steam_language = SteamAPI_ISteamApps_GetCurrentGameLanguage(steam_api);
-    return steam_language != nullptr ? steam_language : "";
-}
 
 static const std::map<int, const std::wstring> *mod_event_text_for_talk;
 
@@ -64,7 +49,7 @@ static const wchar_t *msg_repository_lookup_entry_detour(from::CS::MsgRepository
 void ermerchant::setup_messages()
 {
     // Pick the messages to use based on the player's selected language for the game in Steam
-    auto language = get_steam_language();
+    auto language = SteamApps()->GetCurrentGameLanguage();
     auto localized_messages = event_text_for_talk_by_lang.find(language);
     if (localized_messages != event_text_for_talk_by_lang.end())
     {
