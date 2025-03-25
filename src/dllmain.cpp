@@ -104,3 +104,22 @@ bool WINAPI DllMain(HINSTANCE dll_instance, unsigned int fdw_reason, void *lpv_r
     }
     return true;
 }
+
+// Set up a fake ModEngine2 extension simply so it doesn't print a "is not a modengine extension"
+// error
+static struct dummy_modengine_extension_st
+{
+    virtual ~dummy_modengine_extension_st() = default;
+    virtual void on_attach(){};
+    virtual void on_detach(){};
+    virtual const char *id()
+    {
+        return "merchant";
+    }
+} modengine_extension;
+
+extern "C" __declspec(dllexport) bool modengine_ext_init(void *connector, void **extension)
+{
+    *extension = &modengine_extension;
+    return true;
+}
