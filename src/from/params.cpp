@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <array>
 #include <chrono>
 #include <spdlog/spdlog.h>
 #include <thread>
@@ -8,6 +10,11 @@
 using namespace std;
 
 from::params::ParamList **from::params::param_list_address = nullptr;
+
+static auto required_params =
+    array{L"EquipParamAccessory", L"EquipParamGem",        L"EquipParamGoods",
+          L"EquipParamProtector", L"EquipParamWeapon",     L"ItemLotParam_enemy",
+          L"ItemLotParam_map",    L"ReinforceParamWeapon", L"ShopLineupParam"};
 
 void from::params::initialize()
 {
@@ -23,19 +30,22 @@ void from::params::initialize()
         auto param_list = *param_list_address;
         if (param_list != nullptr)
         {
-            bool params_ready = true;
-            for (int i = 0; i < sizeof(param_list->entries) / sizeof(param_list->entries[0]); i++)
+            int required_param_count = 0;
+
+            for (auto &entry : param_list->entries)
             {
-                auto param_res_cap = param_list->entries[i].param_res_cap;
-                if (param_res_cap == nullptr)
+                if (entry.param_res_cap != nullptr &&
+                    ranges::find(required_params,
+                                 wstring{dlw_c_str(&entry.param_res_cap->param_name)}) !=
+                        required_params.end())
                 {
-                    params_ready = false;
-                    break;
+                    required_param_count++;
                 }
-            }
-            if (params_ready)
-            {
-                return;
+
+                if (required_param_count == required_params.size())
+                {
+                    return;
+                }
             }
         }
 
