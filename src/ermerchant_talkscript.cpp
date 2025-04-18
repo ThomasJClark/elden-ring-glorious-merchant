@@ -18,9 +18,11 @@
 #include "from/talk_commands.hpp"
 #include "modutils.hpp"
 
+using namespace std;
+
 static constexpr unsigned char get_talk_list_entry_result_function = 23;
 
-static std::array<from::EzState::transition *, 100> patched_transition_array;
+static array<from::EzState::transition *, 100> patched_transition_array;
 
 /**
  * Check if the given state group is the main menu for a merchant, and patch it to contain the
@@ -41,11 +43,13 @@ static bool patch_states(from::EzState::state_group *state_group)
             if (event.command == from::talk_command::add_talk_list_data)
             {
                 auto message_id = get_int_value(event.args[1]);
-                if (message_id == ermerchant::event_text_for_talk::purchase)
+                if (ranges::any_of(ermerchant::event_text_for_talk::purchase,
+                                   [&](auto id) { return id == message_id; }))
                 {
                     add_menu1_event = &event;
                 }
-                else if (message_id == ermerchant::event_text_for_talk::sell)
+                else if (ranges::any_of(ermerchant::event_text_for_talk::sell,
+                                        [&](auto id) { return id == message_id; }))
                 {
                     add_menu2_event = &event;
                 }
@@ -96,7 +100,7 @@ static bool patch_states(from::EzState::state_group *state_group)
     // last elif statements, because the last one is an else that closes the talk menu.
     auto &transitions = menu_transition_state->transitions;
 
-    std::copy(transitions.begin(), transitions.end() - 1, patched_transition_array.begin());
+    copy(transitions.begin(), transitions.end() - 1, patched_transition_array.begin());
     auto start_index = transitions.size() - 1;
     patched_transition_array[start_index] = &browse_inventory_transition;
     patched_transition_array[start_index + 1] = &browse_cut_content_transition;

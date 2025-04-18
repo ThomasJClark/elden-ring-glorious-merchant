@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <map>
 #include <string>
 
@@ -32,8 +33,8 @@ static constexpr int dlc = 99999200;
 // Existing messages, for searching for particular talkscript states
 static constexpr int about_kale = 28000002;
 static constexpr int leave = 20000009;
-static constexpr int purchase = 20000010;
-static constexpr int sell = 20000011;
+static constexpr auto purchase = std::array{15000700, 20000010, 22240020, 23070020, 26000010};
+static constexpr auto sell = std::array{15000710, 20000011};
 }
 
 void setup_messages();
