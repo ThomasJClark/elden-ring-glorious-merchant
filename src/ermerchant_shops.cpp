@@ -20,6 +20,7 @@
 #include "from/paramdef/EQUIP_PARAM_PROTECTOR_ST.hpp"
 #include "from/paramdef/EQUIP_PARAM_WEAPON_ST.hpp"
 #include "from/paramdef/ITEMLOT_PARAM_ST.hpp"
+#include "from/paramdef/MAGIC_PARAM_ST.hpp"
 #include "from/paramdef/REINFORCE_PARAM_WEAPON_ST.hpp"
 #include "from/paramdef/SHOP_LINEUP_PARAM.hpp"
 
@@ -62,6 +63,8 @@ static constexpr int64_t protector_bare_legs_id = 10300;
 
 static constexpr int64_t goods_golden_seed_id = 10010;
 static constexpr int64_t goods_sacred_tear_id = 10020;
+
+static constexpr uint8_t goods_use_anim_crush_rune = 9;
 
 static constexpr uint8_t goods_type_normal_item = 0;
 static constexpr uint8_t goods_type_key_item = 1;
@@ -531,9 +534,12 @@ void ermerchant::setup_shops()
 
         std::vector<from::paramdef::SHOP_LINEUP_PARAM> *lineups = nullptr;
 
+        int value = 20 * row.sellValue;
+
         if (cut_content_weapons.contains(id))
         {
             lineups = &cut_good_lineups;
+            value = 100;
         }
         else if (row.wepType == weapon_type_arrow || row.wepType == weapon_type_greatarrow ||
                  row.wepType == weapon_type_bolt || row.wepType == weapon_type_ballista_bolt)
@@ -557,7 +563,8 @@ void ermerchant::setup_shops()
             lineups = &weapon_lineups;
         }
 
-        lineups->push_back({.equipId = (int32_t)id, .equipType = equip_type_weapon});
+        lineups->push_back(
+            {.equipId = (int32_t)id, .value = value, .equipType = equip_type_weapon});
     }
 
     for (auto [id, row] :
@@ -605,9 +612,12 @@ void ermerchant::setup_shops()
 
         std::vector<from::paramdef::SHOP_LINEUP_PARAM> *lineups = nullptr;
 
+        int value = 5 * row.sellValue;
+
         if (protector_name.starts_with(cut_content_prefix) || cut_content_protectors.contains(id))
         {
             lineups = &cut_armor_lineups;
+            value = id == 1930300 ? 69 : 100;
         }
         else if (is_dlc)
         {
@@ -618,7 +628,8 @@ void ermerchant::setup_shops()
             lineups = &armor_lineups;
         }
 
-        lineups->push_back({.equipId = (int32_t)id, .equipType = equip_type_protector});
+        lineups->push_back(
+            {.equipId = (int32_t)id, .value = value, .equipType = equip_type_protector});
     }
 
     for (auto [id, row] :
@@ -652,8 +663,14 @@ void ermerchant::setup_shops()
             lineups = &talisman_lineups;
         }
 
-        lineups->push_back({.equipId = (int32_t)id, .equipType = equip_type_accessory});
+        lineups->push_back({
+            .equipId = (int32_t)id,
+            .value = row.sellValue * 4,
+            .equipType = equip_type_accessory,
+        });
     }
+
+    auto magic_param = from::params::get_param<from::paramdef::MAGIC_PARAM_ST>(L"Magic");
 
     for (auto [id, row] :
          from::params::get_param<from::paramdef::EQUIP_PARAM_GOODS_ST>(L"EquipParamGoods"))
@@ -709,16 +726,21 @@ void ermerchant::setup_shops()
 
         std::vector<from::paramdef::SHOP_LINEUP_PARAM> *lineups = nullptr;
 
+        // Seems fair I guess
+        int value = row.sellValue > 0 ? row.sellValue * 10 : 1000;
+
         if (goods_name.starts_with(cut_content_prefix) || !row.iconId ||
             cut_content_goods.contains(id))
         {
             // Put cut items in a separate shop
             lineups = &cut_good_lineups;
+            value = 100;
         }
         else if (id == goods_golden_seed_id || id == goods_sacred_tear_id)
         {
             // These are classified as materials, but should really appear in the consumables shop
             lineups = is_dlc ? &dlc_consumable_lineups : &consumable_lineups;
+            value = 5000;
         }
         else
         {
@@ -734,6 +756,7 @@ void ermerchant::setup_shops()
                     lineups =
                         is_dlc ? &dlc_miscellaneous_item_lineups : &miscellaneous_item_lineups;
                 }
+                value = 500;
                 break;
 
             case goods_type_sorcery:
@@ -741,6 +764,17 @@ void ermerchant::setup_shops()
             case goods_type_self_buff_sorcery:
             case goods_type_self_buff_incantation:
                 lineups = is_dlc ? &dlc_spell_lineups : &spell_lineups;
+
+                // Spells can't be sold so they don't have sell prices - pick a price based on FP
+                // cost
+                try
+                {
+                    value = magic_param[id].mp * 500;
+                }
+                catch (const std::exception &)
+                {
+                    /* ignored */
+                }
                 break;
 
             case goods_type_spirit_summon_lesser:
@@ -754,6 +788,14 @@ void ermerchant::setup_shops()
                     else
                         lineups = is_dlc ? &dlc_spirit_summon_lineups : &spirit_summon_lineups;
                 }
+
+                // Spirit ashes can't be sold so they don't have sell prices - pick a price based on
+                // FP or HP cost
+                value = 0;
+                if (row.consumeMP > 0)
+                    value += row.consumeMP * 500;
+                if (row.consumeHP > 0)
+                    value += row.consumeHP * 100;
                 break;
             }
 
@@ -775,6 +817,7 @@ void ermerchant::setup_shops()
             case goods_type_wondrous_physick_tear:
             case goods_type_great_rune:
                 lineups = is_dlc ? &dlc_miscellaneous_item_lineups : &miscellaneous_item_lineups;
+                value = 4000;
                 break;
             }
         }
@@ -802,8 +845,21 @@ void ermerchant::setup_shops()
                 }
             }
 
+            // Consumable runes/remembrances - price them like coin pouches in Sekiro
+            if (row.goodsUseAnim == goods_use_anim_crush_rune)
+                value = static_cast<int>(row.sellValue * 1.1);
+
+            // DLC upgrade items - should be expensive
+            if (id == 2010000 || id == 2010100)
+                value = 10000;
+
+            // Herba
+            if (id == 20690)
+                value = 420;
+
             lineups->push_back({
                 .equipId = (int32_t)id,
+                .value = value,
                 .eventFlag_forStock = event_flag,
                 .sellQuantity = sell_quantity,
                 .equipType = equip_type_goods,
@@ -841,6 +897,7 @@ void ermerchant::setup_shops()
         auto event_flag_it = gems_flags.find(id);
         lineups->push_back({
             .equipId = (int32_t)id,
+            .value = 10 * row.sellValue,
             .eventFlag_forStock = event_flag_it == gems_flags.end() ? 0 : event_flag_it->second,
             .equipType = equip_type_gem,
         });
@@ -851,6 +908,19 @@ void ermerchant::setup_shops()
     {
         auto level = id % 50;
         max_level_by_reinforce_type_id[id - level] = level;
+    }
+
+    // If configured to do so, overwrite the values we computed above with -1, which defaults to
+    // free based on our get_sell_value() hook
+    if (config::all_items_free)
+    {
+        for (auto &shop : mod_shops)
+        {
+            for (auto &lineup : shop.lineups)
+            {
+                lineup.value = -1;
+            }
+        }
     }
 
     // Hook SoloParamRepositoryImp::LookupShopMenu to return the new shops added by the mod
