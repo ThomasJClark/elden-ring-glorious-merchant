@@ -37,6 +37,11 @@ static constexpr int purchase = 20000010;
 static constexpr int sell = 20000011;
 }
 
+namespace menu_text
+{
+static constexpr int elden_ring_version = 401322;
+}
+
 void setup_messages();
 const std::wstring_view get_message(from::msgbnd, int);
 

@@ -424,6 +424,12 @@ void ermerchant::setup_shops()
 
     SPDLOG_INFO("Tarnished Pack {}", tarnished_pack_installed ? "installed" : "not installed");
 
+    if (ermerchant::get_message(from::msgbnd::menu_text, ermerchant::menu_text::elden_ring_version)
+            .find(L"ELDEN RING Reforged") != std::wstring_view::npos)
+    {
+        SPDLOG_INFO("ELDEN RING Reforged installed");
+    }
+
     // Look up event flags set when acquiring items like maps and cookbooks. Simply possessing
     // these items doesn't actually unlock anything, an event flag must also be set.
     std::map<int32_t, uint32_t> goods_flags;
